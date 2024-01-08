@@ -9,8 +9,25 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
 )
 
+import evalu as ev
+import filenames as fn
 from filenames import *
 
+def fetch_airleader(fname):
+    ev.print_line('FETCHING AIRLEADER')
+    col_list = get_significant_columns(filetype="airleader")
+    compressors = pd.read_table(fn.compressor_list_file, sep=",")
+    li = read_flist([fname], col_list, compressors)
+    air_leader = pd.concat(li, axis=0)
+    return air_leader
+
+def fetch_airflow(fname):
+    ev.print_line('FETCHING AIRFLOW')
+    col_list = get_significant_columns(filetype="volumenstrom")
+    compressors = pd.read_table(fn.compressor_list_file, sep=",")
+    li = read_flist([fname], col_list, compressors, "volumenstrom")
+    air_flow = pd.concat(li, axis=0)
+    return air_flow
 
 def get_significant_columns(filetype="airleader"):
     """
@@ -46,15 +63,16 @@ def extract_training_data_from_df(dfs, reggoal="K2V0"):
      or 'net_df' and 'p_df' (air_flow and air_leader) )
     as arguments and returns an X,y trainable dataset of numpy arrays
     """
-    scaler = StandardScaler()
+    ev.print_line('EXTRACT TRAINING DATA')
     if reggoal == "K2V0":
         """
         compressors K --> volume flow "consumption" V_0
         """
+        scaler = StandardScaler()
         df = dfs[0]
         comp_df = dfs[1]
-        # K shall be of form
-        # K =  [seconds, compressor motor state/flow rate]
+        ''' K shall be of form:  K =  [seconds, compressor motor state/flow rate]
+        '''
         consumption = df["Consumption"].to_numpy()
         K_V_dot = np.zeros((df.index.size, comp_df.index.size))
         K_R2 = np.zeros((df.index.size, comp_df.index.size))
@@ -92,11 +110,14 @@ def extract_training_data_from_df(dfs, reggoal="K2V0"):
         # V_out = np.hstack((V_out, new_column))
         # V_out = V_out[1:,]
         # p = p[1:]
-        """ rescaling """
-        V_out = scaler.fit_transform(V_out)
-        p = scaler.fit_transform(p.reshape(-1, 1))
         return V_out, p
 
+def scale_Xy(X,y,scaler):
+    """ rescaling to a given scaler"""
+    ev.print_line('FETCHING AIRLEADER')
+    X = scaler.fit_transform(X)
+    y = scaler.fit_transform(y.reshape(-1, 1))
+    return X,y
 
 def get_max_volume_flow(df, i):
     vdot = df.loc[i, "mechan_Fluss_nom"]
@@ -256,6 +277,7 @@ def put_on_same_time_interval(df1, df2, common_index, **kwargs):
     a linearly time-dependent function
     method: should either be ffill or index
     """
+    ev.print_line('PUT ON COMMON TIMES')
     df2_int = df2.reindex(common_index).interpolate(
         method=kwargs.get("method", "index"),
     )

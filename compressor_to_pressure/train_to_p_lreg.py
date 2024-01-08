@@ -9,35 +9,26 @@ import filenames as fn
 import reading_data as rd
 import evalu as ev
 import decision_tree_models as dtm
+
 from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    StandardScaler,
+    MaxAbsScaler,
+)
 
-
+airleader_files = fn.d1_air_leader_file
+airflow_files = fn.d1_flow_file
+scaler = StandardScaler()
 
 # ------------------------------------------------------------
 if __name__ == "__main__":
 
     # ------------------------------------------------------------
     ev.print_line('READING DATA')
-    compressors = pd.read_table(fn.compressor_list_file, sep=",")
-    
-    # # ------------------------------------------------------------
-    col_list = rd.get_significant_columns(filetype="airleader")
-    # li = rd.read_flist([fn.short_air_leader_file], col_list, compressors)
-    li = rd.read_flist([fn.d1_air_leader_file], col_list, compressors)
-    # li = rd.read_flist(fn.all_air_leader_files, col_list, compressors)
-    air_leader = pd.concat(li, axis=0)
-    # rd.print_df_information(air_leader, name="air_leader", nhead=30)
-
+    air_leader = rd.fetch_airleader(airleader_files)
+    air_flow = rd.fetch_airflow(airflow_files)
     # ------------------------------------------------------------
-    col_list = rd.get_significant_columns(filetype="volumenstrom")
-    # li = rd.read_flist([fn.short_flow_file], col_list, compressors, "volumenstrom")
-    li = rd.read_flist([fn.d1_flow_file], col_list, compressors, "volumenstrom")
-    # li = rd.read_flist([fn.flow_file], col_list, compressors, "volumenstrom")
-    air_flow = pd.concat(li, axis=0)
-    # rd.print_df_information(air_flow, name="air_flow", nhead=30)
-
-    # ------------------------------------------------------------
-    ev.print_line('PUT ON COMMON TIMES')
     common_times = rd.get_common_times(air_leader, air_flow)
     air_leader, air_flow = rd.put_on_same_time_interval(
         air_leader,
@@ -48,10 +39,9 @@ if __name__ == "__main__":
     # rd.print_df_information(air_leader, name="air_leader", nhead=30)
     # rd.print_df_information(air_flow, name="air_flow", nhead=30)
     # ------------------------------------------------------------
-    ev.print_line('EXTRACT TRAINING DATA')
     X, y = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
+    X,y = rd.scale_Xy(X,y,scaler)
     X = lm.extend_to_polynomial(X,degree = 2)
-    myseed = 42
     X_train, X_val, X_test, y_train, y_val, y_test = lm.split_train_val_test(
         X, y, 0.1, ps=True
     )
@@ -60,7 +50,7 @@ if __name__ == "__main__":
     n_cv1 = 5
     n_cv2 = 1
     y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_test)[0]))
-    depths = np.linspace(1,100,n_cv1)
+    depths = np.linspace(1,10,n_cv1)
     mids = np.linspace(0,1,n_cv2) #min_impurity_decrease 
     if n_cv1 *n_cv2 >1:
         ev.print_line('Manual CV')
