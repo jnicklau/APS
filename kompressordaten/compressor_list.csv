@@ -1,0 +1,14 @@
+Airleaderkanal,Kompressorname,Rang,Leistung_max_gem,Leistung_min_gem,Leistung_max_nom,mechan_Fluss_nom,Abwaermenutzung,geregelt,Stromzaehlernummer,intern
+1,IR Centac C47,1,256,,350,0,0,0,2775,7_11
+3,IR SSR250,1,263.6,,250,0,0,0,2660,7_08
+4,IR NirvanaN160,1,175.1,57,160,25.6,1,1,2760,7_03
+5,Pneumoforma A180,1,107.8,,110,0,0,0,2720,7_09
+6,IR NirvanaRSe290ne,1,250,95,250,0,1,1,2830,7_07
+7,IR SSR-250,2,251.8,,280,50,0,0,2800,8_07
+8,BOGE S150,2,111.1,,110,18,0,0,2730,7_10
+10,Mattei Maxima75,2,89,,75,17.1,0,0,2820,7_01
+11,IR Nirvana N160,1,188.5,57,160,25.6,1,1,2780,7_04
+13,BOGE S340,3,226.2,,250,41,0,0,2710,8_05
+14,BOGE S150,3,112.8,,110,18,0,0,2670,8_01
+15,BOGE S180,2,137.5,,130,23,0,0,2770,7_06
+16,BOGE S180,3,138.5,,130,23,0,0,2560,8_02
