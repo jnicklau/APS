@@ -51,7 +51,7 @@ def linear_lasso_regr_train(X, y, **kwargs):
         llregr = linear_model.LassoCV(**kwargs)
         # print("llregr.alpha_:", llregr.alpha_)
         llregr.fit(X, y.ravel())
-        print("llregr.alpha_:", llregr.alpha_)  
+        print("llregr.alpha_:", llregr.alpha_)
     else:
         ev.print_line("Lasso")
         llregr = linear_model.Lasso(alpha=kwargs.get("alpha", 0.5))
@@ -80,16 +80,18 @@ def elastic_net_regr_train(X, y, **kwargs):
     enregr.fit(X, y)
     return enregr
 
-def sgd_regr_train(X,y, **kwargs):
-    ev.print_line('SGD')
-    sgdregr  = linear_model.SGDRegressor(**kwargs)
-    sgdregr.fit(X,y.ravel())
+
+def sgd_regr_train(X, y, **kwargs):
+    ev.print_line("SGD")
+    sgdregr = linear_model.SGDRegressor(**kwargs)
+    sgdregr.fit(X, y.ravel())
     return sgdregr
 
-def huber_regr_train(X,y, **kwargs):
-    ev.print_line('Huber')
-    sgdregr  = linear_model.HuberRegressor(**kwargs)
-    sgdregr.fit(X,y.ravel())
+
+def huber_regr_train(X, y, **kwargs):
+    ev.print_line("Huber")
+    sgdregr = linear_model.HuberRegressor(**kwargs)
+    sgdregr.fit(X, y.ravel())
     return sgdregr
 
 
@@ -100,7 +102,7 @@ def linear_predict(model, X_test):
 def extend_to_polynomial(X, **kwargs):
     ev.print_line("PolynomialExtension")
     if kwargs:
-        print('degree n of X**n: ', kwargs.get('degree'))
+        print("degree n of X**n: ", kwargs.get("degree"))
     poly = PolynomialFeatures(**kwargs)
     return poly.fit_transform(X)
 

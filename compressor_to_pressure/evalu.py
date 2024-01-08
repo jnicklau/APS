@@ -6,7 +6,11 @@ import statsmodels.api as sm
 import scipy.stats as stats
 
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import cross_val_score, LearningCurveDisplay, learning_curve
+from sklearn.model_selection import (
+    cross_val_score,
+    LearningCurveDisplay,
+    learning_curve,
+)
 
 
 def print_line(mstring=""):
@@ -47,14 +51,14 @@ def coeff_analysis(model, idlist, plotbool=False, reggoal="K2V0"):
     # The coefficients
     if reggoal == "K2V0":
         print("shape of model.coef_", np.shape(model.coef_))
-        coefs = model.coef_.reshape(1,26)
+        coefs = model.coef_.reshape(1, 26)
         print("shape of coefs", np.shape(coefs))
 
         print("Coefficients for motors: \n", coefs[:, 0:13])
         print("Coefficients for flow: \n", coefs[:, 13:26])
         if plotbool:
             plot_model_weights(
-                [coefs[:, 0:13],coefs[:, 13:26]],
+                [coefs[:, 0:13], coefs[:, 13:26]],
                 c_nums=idlist["Airleaderkanal"],
             )
     if reggoal == "Vi2p":
@@ -63,19 +67,24 @@ def coeff_analysis(model, idlist, plotbool=False, reggoal="K2V0"):
             plot_model_weights(model.coef_, c_nums=idlist.columns, reggoal=reggoal)
 
 
-def plot_model_vs_real(
-    seconds, y_test, y_pred, y_pred_baseline, **kwargs
-):
+def plot_model_vs_real(seconds, y_test, y_pred, y_pred_baseline, **kwargs):
     plt.plot(seconds, y_test, color="green", linewidth=2, label="y_true")
-    mse_pred,r2_pred = metrics(y_test,y_pred)
-    plt.plot(seconds, y_pred, color="blue", linewidth=3, 
-        label="y_pred \n MSE: %.3f R2: %.3f " %(mse_pred,r2_pred)
-        )
-    mse_base, r2_base = metrics(y_test,y_pred_baseline)
+    mse_pred, r2_pred = metrics(y_test, y_pred)
     plt.plot(
-        seconds, y_pred_baseline, color="black", linewidth=1, 
-        label="y_pred_baseline\n MSE: %.3f R2: %.3f " %(mse_base,r2_base)
-        )
+        seconds,
+        y_pred,
+        color="blue",
+        linewidth=3,
+        label="y_pred \n MSE: %.3f R2: %.3f " % (mse_pred, r2_pred),
+    )
+    mse_base, r2_base = metrics(y_test, y_pred_baseline)
+    plt.plot(
+        seconds,
+        y_pred_baseline,
+        color="black",
+        linewidth=1,
+        label="y_pred_baseline\n MSE: %.3f R2: %.3f " % (mse_base, r2_base),
+    )
     if kwargs.get("std", False):
         ystd = kwargs.get("ystd")
         plt.fill_between(
@@ -87,7 +96,7 @@ def plot_model_vs_real(
             label="predict std",
         )
     plt.legend(loc=1)
-    plt.title(kwargs.get('title', ''))
+    plt.title(kwargs.get("title", ""))
     plt.show()
 
 
@@ -114,16 +123,22 @@ def plot_ar_model_vs_real(alltime, testtime, alldata, predictions, **kwargs):
     plt.show()
 
 
-def plot_learn_curve(model,X,y,**kwargs):
+def plot_learn_curve(model, X, y, **kwargs):
     common_params = {
-    "train_sizes": np.linspace(0.05, 1.0, 5),
-    "n_jobs": 3,
-    "line_kw": {"marker": "o"},
-    "std_display_style": "fill_between",
+        "train_sizes": np.linspace(0.05, 1.0, 5),
+        "n_jobs": 3,
+        "line_kw": {"marker": "o"},
+        "std_display_style": "fill_between",
     }
-    LearningCurveDisplay.from_estimator(model,X,y,**common_params,    )
+    LearningCurveDisplay.from_estimator(
+        model,
+        X,
+        y,
+        **common_params,
+    )
     # train_sizes, _, test_scores_nb, fit_times_nb, score_times_nblearning_curve(model,X,y,return_times = True)
     plt.show()
+
 
 def plot_model_weights(coeffs, c_nums, reggoal="K2V0"):
     coeffs = [coeffs[0][0], coeffs[1][0]]
@@ -146,7 +161,7 @@ def plot_model_weights(coeffs, c_nums, reggoal="K2V0"):
     ax.legend()
     plt.xticks(c_nums)
     plt.xlabel("Airleaderkanal")
-    plt.ylabel('weight of coefficient')
+    plt.ylabel("weight of coefficient")
     plt.show()
     return fig
 

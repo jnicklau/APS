@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
     # # ------------------------------------------------------------
-    ev.print_line('READING DATA')
+    ev.print_line("READING DATA")
     col_list = get_significant_columns(filetype="airleader")
     li = read_flist(fn.all_air_leader_files, col_list, compressors)
     # li = read_flist([fn.short_air_leader_file], col_list, compressors)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # time_frequency_analysis(air_leader["Master.AE1 (Netzdruck)"])
 
     # ------------------------------------------------------------
-    ev.print_line('EXTRACT TRAINING DATA')
+    ev.print_line("EXTRACT TRAINING DATA")
     X, y = extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
     # X = lm.extend_to_polynomial(X,degree = 2)
     myseed = 42
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         y_train,
         # positive=True,
         alphas=np.logspace(-5, 5, 31),
-        max_iter = 3000,
+        max_iter=3000,
         # alpha=3.16,
     )
     model = lr_model
@@ -75,11 +75,13 @@ if __name__ == "__main__":
         y_train,
         model.predict(X_train),
         np.full(np.shape(y_train), np.mean(y_train)),
-        title = 'Training Data'
-
+        title="Training Data",
     )
     # plot how well do we perform on test data
     ev.plot_model_vs_real(
-        np.arange(np.shape(X_test)[0]), y_test, y_pred, y_pred_baseline,
-        title = 'Test Data'
+        np.arange(np.shape(X_test)[0]),
+        y_test,
+        y_pred,
+        y_pred_baseline,
+        title="Test Data",
     )

@@ -23,9 +23,8 @@ scaler = StandardScaler()
 
 # ------------------------------------------------------------
 if __name__ == "__main__":
-
     # ------------------------------------------------------------
-    ev.print_line('READING DATA')
+    ev.print_line("READING DATA")
     air_leader = rd.fetch_airleader(airleader_files)
     air_flow = rd.fetch_airflow(airflow_files)
     # ------------------------------------------------------------
@@ -40,8 +39,8 @@ if __name__ == "__main__":
     # rd.print_df_information(air_flow, name="air_flow", nhead=30)
     # ------------------------------------------------------------
     X, y = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
-    X,y = rd.scale_Xy(X,y,scaler)
-    X = lm.extend_to_polynomial(X,degree = 2)
+    X, y = rd.scale_Xy(X, y, scaler)
+    X = lm.extend_to_polynomial(X, degree=2)
     X_train, X_val, X_test, y_train, y_val, y_test = lm.split_train_val_test(
         X, y, 0.1, ps=True
     )
@@ -50,17 +49,17 @@ if __name__ == "__main__":
     n_cv1 = 5
     n_cv2 = 1
     y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_test)[0]))
-    depths = np.linspace(1,10,n_cv1)
-    mids = np.linspace(0,1,n_cv2) #min_impurity_decrease 
-    if n_cv1 *n_cv2 >1:
-        ev.print_line('Manual CV')
+    depths = np.linspace(1, 10, n_cv1)
+    mids = np.linspace(0, 1, n_cv2)  # min_impurity_decrease
+    if n_cv1 * n_cv2 > 1:
+        ev.print_line("Manual CV")
 
     for i in range(n_cv1):
         for j in range(n_cv2):
             lr_model = dtm.decision_tree_train(
                 X_train,
                 y_train,
-                max_depth = int(depths[i]),
+                max_depth=int(depths[i]),
                 # min_impurity_decrease = mids[j]
                 # fit_intercept = True,
                 # max_iter = 300
@@ -77,12 +76,12 @@ if __name__ == "__main__":
     # ev.plot_learn_curve(lr_model,X_train,y_train,cv = 5)
     # ------------------------------------------------------------
     y_pred_baseline = np.full(np.shape(y_test), np.mean(y_train))
-    
+
     # ------------------------------------------------------------
     # ev.print_line('CROSS VALIDATION')
     # scores = cross_val_score(lr_model,X_train,y_train.ravel(),cv = 5)
     # print("%0.2f mean with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-    
+
     # ------------------------------------------------------------
     # #evaluate coefficients
     # ev.coeff_analysis(
@@ -107,7 +106,7 @@ if __name__ == "__main__":
         y_train,
         lr_model.predict(X_train),
         np.full(np.shape(y_train), np.mean(y_train)),
-        title = 'Training Data'
+        title="Training Data",
     )
     # plot how well we perform on test data
     ev.plot_model_vs_real(
@@ -117,7 +116,6 @@ if __name__ == "__main__":
         y_pred_baseline,
         # std=True,
         # ystd=y_std,
-        title = 'Test Data'
+        title="Test Data",
     )
     # ------------------------------------------------------------
-
