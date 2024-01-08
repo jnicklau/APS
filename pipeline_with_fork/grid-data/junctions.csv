@@ -1,5 +1,0 @@
-long_name,name,pressure,temp,height,servicing,type,xpos,ypos,control
-1,1,35,285,0,true,pt,0,0,
-2,2,35,285,0,true,pt,1,1,
-3,3,35,285,0,true,pt,2,0,
-4,4,35,285,0,true,pt,1,-1,
