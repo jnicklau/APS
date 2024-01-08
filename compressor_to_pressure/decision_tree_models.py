@@ -1,7 +1,4 @@
 # decision_tree_models.py
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 import evalu as ev
 
 from sklearn.tree import DecisionTreeRegressor

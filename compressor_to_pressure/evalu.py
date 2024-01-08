@@ -1,6 +1,5 @@
 # eval.py
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import scipy.stats as stats
@@ -9,7 +8,6 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import (
     cross_val_score,
     LearningCurveDisplay,
-    learning_curve,
 )
 
 
@@ -30,6 +28,15 @@ def comp_and_eval_predictions(y_pred_array, y_true, **kwargs):
             y_pred = y_pred_array[i, j, :]
             metrics_array[i, j, :] = metrics(y_true, y_pred.reshape(-1, 1))
     return metrics_array
+
+
+def cross_validation(X, y, model, **kwargs):
+    print_line("CROSS VALIDATION")
+    scores = cross_val_score(model, X, y.ravel(), **kwargs)
+    print(
+        "%0.2f mean with a standard deviation of %0.2f" % (scores.mean(), scores.std())
+    )
+    return scores
 
 
 def qqplot(y):
@@ -196,6 +203,7 @@ def single_compressor_contributions(model, compressors):
 
 def print_model_metrics(y_test, y_pred, y_pred_baseline):
     # The mean squared error
+    print_line("Model Metrics")
     print("Mean squared error of model: %.4f" % mean_squared_error(y_test, y_pred))
     print(
         "Mean squared error of baseline: %.4f"

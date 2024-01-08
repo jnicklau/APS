@@ -1,11 +1,19 @@
-from matplotlib.colors import ListedColormap, BoundaryNorm, LinearSegmentedColormap, Normalize, LogNorm
+from matplotlib.colors import (
+    ListedColormap,
+    BoundaryNorm,
+    LinearSegmentedColormap,
+    Normalize,
+    LogNorm,
+)
+
 MATPLOTLIB_INSTALLED = True
+
 
 def cmap_discrete(cmap_list):
     """
     Can be used to create a discrete colormap.
     INPUT:
-        - cmap_list (list) - list of tuples, where each tuple represents one range. Each tuple has the form of 
+        - cmap_list (list) - list of tuples, where each tuple represents one range. Each tuple has the form of
             ((from, to), color) .
     OUTPUT:
         - cmap - matplotlib colormap

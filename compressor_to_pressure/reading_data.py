@@ -14,11 +14,11 @@ import filenames as fn
 from filenames import *
 
 
-def fetch_airleader(fname):
+def fetch_airleader(flist):
     ev.print_line("FETCHING AIRLEADER")
     col_list = get_significant_columns(filetype="airleader")
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
-    li = read_flist([fname], col_list, compressors)
+    li = read_flist(flist, col_list, compressors)
     air_leader = pd.concat(li, axis=0)
     return air_leader
 
@@ -59,7 +59,7 @@ def print_df_information(df, **kwargs):
         print("Is index in %s unique?" % name, df.index.is_unique)
 
 
-def extract_training_data_from_df(dfs, reggoal="K2V0"):
+def extract_training_data_from_df(dfs, reggoal):
     """
     takes a list of DataFrames
     (either 'df' and 'comp_df' (air_leader and compressor_list),
@@ -118,7 +118,8 @@ def extract_training_data_from_df(dfs, reggoal="K2V0"):
 
 def scale_Xy(X, y, scaler):
     """rescaling to a given scaler"""
-    ev.print_line("FETCHING AIRLEADER")
+    ev.print_line("Scaling Data")
+    print("")
     X = scaler.fit_transform(X)
     y = scaler.fit_transform(y.reshape(-1, 1))
     return X, y
@@ -136,7 +137,8 @@ def get_max_volume_flow(df, i):
 
 def get_compressornames(df, filetype="airleader"):
     """
-    return a dict with the names of the compressors as keys and the number as the Air Leader uses it as values
+    return a dict with the names of the compressors as keys
+    and the number as the Air Leader uses it as values
     """
     if filetype == "airleader":
         # get the numbers of air leader channels by taking the first value of every Number column
@@ -145,7 +147,7 @@ def get_compressornames(df, filetype="airleader"):
             if "Number" in column:
                 compressornames[df[column].iloc[0]] = column.replace(".Number", "")
         inv_compressornames = {v: k for k, v in compressornames.items()}
-        return inv_compressornames
+    return inv_compressornames
 
 
 def reformat_df(df, comp_df, filetype="airleader"):
@@ -301,8 +303,6 @@ def read_flist(flist, col_list, compressors, filetype="airleader"):
     """
     # read files
     li = []
-    if filetype == "airleader":
-        li7 = []
     for i, filename in enumerate(flist):
         # i: iterator of files
         # print(i,filename)

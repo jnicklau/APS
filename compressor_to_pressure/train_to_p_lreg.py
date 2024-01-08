@@ -10,16 +10,19 @@ import reading_data as rd
 import evalu as ev
 import decision_tree_models as dtm
 
-from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import (
     MinMaxScaler,
     StandardScaler,
     MaxAbsScaler,
 )
 
-airleader_files = fn.d1_air_leader_file
+airleader_files = [fn.d1_air_leader_file]
 airflow_files = fn.d1_flow_file
 scaler = StandardScaler()
+n_cv = 5
+n_cv1 = 5
+n_cv2 = 1
+dg = 2
 
 # ------------------------------------------------------------
 if __name__ == "__main__":
@@ -40,27 +43,25 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     X, y = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
     X, y = rd.scale_Xy(X, y, scaler)
-    X = lm.extend_to_polynomial(X, degree=2)
+    # X = lm.extend_to_polynomial(X, degree=dg)
     X_train, X_val, X_test, y_train, y_val, y_test = lm.split_train_val_test(
         X, y, 0.1, ps=True
     )
 
     # ------------------------------------------------------------
-    n_cv1 = 5
-    n_cv2 = 1
     y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_test)[0]))
     depths = np.linspace(1, 10, n_cv1)
-    mids = np.linspace(0, 1, n_cv2)  # min_impurity_decrease
+    mids = np.logspace(-10, -5, n_cv1)  # min_impurity_decrease
     if n_cv1 * n_cv2 > 1:
-        ev.print_line("Manual CV")
+        ev.print_line("Manual HPS")
 
     for i in range(n_cv1):
         for j in range(n_cv2):
             lr_model = dtm.decision_tree_train(
                 X_train,
                 y_train,
-                max_depth=int(depths[i]),
-                # min_impurity_decrease = mids[j]
+                # max_depth=int(depths[i]),
+                min_impurity_decrease=mids[i]
                 # fit_intercept = True,
                 # max_iter = 300
                 # positive=True,
@@ -76,12 +77,8 @@ if __name__ == "__main__":
     # ev.plot_learn_curve(lr_model,X_train,y_train,cv = 5)
     # ------------------------------------------------------------
     y_pred_baseline = np.full(np.shape(y_test), np.mean(y_train))
-
     # ------------------------------------------------------------
-    # ev.print_line('CROSS VALIDATION')
-    # scores = cross_val_score(lr_model,X_train,y_train.ravel(),cv = 5)
-    # print("%0.2f mean with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-
+    ev.cross_validation(X_train, y_train, lr_model, cv=n_cv)
     # ------------------------------------------------------------
     # #evaluate coefficients
     # ev.coeff_analysis(
