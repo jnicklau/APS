@@ -3,12 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import scipy.stats as stats
-
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import (
     cross_val_score,
     LearningCurveDisplay,
 )
+import reading_data as rd
 
 
 def print_line(mstring=""):
@@ -104,7 +104,19 @@ def plot_model_vs_real(seconds, y_test, y_pred, y_pred_baseline, **kwargs):
         )
     plt.legend(loc=1)
     plt.title(kwargs.get("title", ""))
+    xlab, ylab = get_labels_from_reggoal(kwargs.get("reggoal", None))
+    plt.ylabel(ylab)
+    plt.xlabel(xlab)
     plt.show()
+
+
+def get_labels_from_reggoal(reggoal):
+    if reggoal == "K2V0":
+        return "data(/time) points", "volume flow $\dot V_0$"
+    elif reggoal == "Vi2p":
+        return "data(/time) points", "pressure $p$"
+    else:
+        return "", ""
 
 
 def plot_ar_model_vs_real(alltime, testtime, alldata, predictions, **kwargs):
@@ -143,7 +155,6 @@ def plot_learn_curve(model, X, y, **kwargs):
         y,
         **common_params,
     )
-    # train_sizes, _, test_scores_nb, fit_times_nb, score_times_nblearning_curve(model,X,y,return_times = True)
     plt.show()
 
 
@@ -195,7 +206,7 @@ def single_compressor_contributions(model, compressors):
     for i in range(13):
         a = np.zeros((1, 13 * 2))
         a[0, i] = 1
-        a[0, i + 13] = get_max_volume_flow(compressors, i)
+        a[0, i + 13] = rd.get_max_volume_flow(compressors, i)
         # print(a)
         single_compr_cons[i] = model.predict(a)[0]
     return single_compr_cons

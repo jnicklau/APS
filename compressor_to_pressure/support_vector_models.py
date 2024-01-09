@@ -1,5 +1,5 @@
 # support_vector_models.py
-from sklearn.svm import SVR, LinearSVR
+from sklearn.svm import LinearSVR
 import numpy as np
 
 

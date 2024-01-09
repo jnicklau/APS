@@ -2,9 +2,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from reading_data import *
-from filenames import *
-
 
 def time_frequency_analysis(s, maxy=1e6, pbool=True):
     """
@@ -18,7 +15,7 @@ def time_frequency_analysis(s, maxy=1e6, pbool=True):
     seconds_per_dataset = n_samples_sec / seconds_per_day
     f_per_day = f_per_dataset / seconds_per_dataset
     # print(np.abs(fft).min(),np.abs(fft).max())
-    if pbool == True:
+    if pbool:
         plt.step(f_per_day, np.abs(fft))
         plt.xscale("log")
         plt.ylim([0, np.abs(fft[1:-2]).max() * 1.1])

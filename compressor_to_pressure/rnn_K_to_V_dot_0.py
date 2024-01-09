@@ -5,9 +5,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import SimpleRNN, Dense
 from tensorflow.keras.initializers import GlorotNormal
 
-from reading_data import *
-from filenames import *
-from feature_analysis import *
+import reading_data as rd
+import filenames as fn
 
 
 def build_rnn_model(seed=None, **kwargs):
@@ -40,11 +39,11 @@ def build_rnn_model(seed=None, **kwargs):
 if __name__ == "__main__":
     # ------------------------------------------------------------
 
-    compressors = pd.read_table(compressor_list_file, sep=",")
+    compressors = pd.read_table(fn.compressor_list_file, sep=",")
     # ------------------------------------------------------------
 
-    col_list = get_significant_columns(filetype="airleader")
-    li = read_file_list(all_air_leader_files, col_list, compressors)
+    col_list = rd.get_significant_columns(filetype="airleader")
+    li = rd.read_file_list(fn.all_air_leader_files, col_list, compressors)
     air_leader = pd.concat(li, axis=0)
 
     print("read and reformatted AirLeader\n", air_leader.head(4))

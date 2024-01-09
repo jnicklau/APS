@@ -2,16 +2,9 @@ import numpy as np
 import pandas as pd
 import regex as re
 import math
-from sklearn.preprocessing import (
-    normalize,
-    MinMaxScaler,
-    StandardScaler,
-    MaxAbsScaler,
-)
 
 import evalu as ev
 import filenames as fn
-from filenames import *
 
 
 def fetch_airleader(flist):
@@ -71,7 +64,7 @@ def extract_training_data_from_df(dfs, reggoal):
         """
         compressors K --> volume flow "consumption" V_0
         """
-        scaler = StandardScaler()
+        # scaler = StandardScaler()
         df = dfs[0]
         comp_df = dfs[1]
         """ K shall be of form:  K =  [seconds, compressor motor state/flow rate]
@@ -85,11 +78,9 @@ def extract_training_data_from_df(dfs, reggoal):
             columnR2 = "%s.R2" % n
             K_V_dot[:, i] = df[columnAE1].to_numpy()
             K_R2[:, i] = df[columnR2].to_numpy()
-        # print(K_R2)
-        # print(K_V_dot)
         K = np.concatenate((K_R2, K_V_dot), axis=1)
-        K = scaler.fit_transform(K)
-        consumption = scaler.fit_transform(consumption.reshape(-1, 1))
+        # K = scaler.fit_transform(K)
+        # consumption = scaler.fit_transform(consumption.reshape(-1, 1))
         return K, consumption
     if reggoal == "Vi2p":
         """volume flow at i positions V_i--> pressure p
@@ -141,7 +132,8 @@ def get_compressornames(df, filetype="airleader"):
     and the number as the Air Leader uses it as values
     """
     if filetype == "airleader":
-        # get the numbers of air leader channels by taking the first value of every Number column
+        """get the numbers of air leader channels
+        by taking the first value of every Number column"""
         compressornames = {}
         for column in df.columns:
             if "Number" in column:
@@ -157,8 +149,10 @@ def reformat_df(df, comp_df, filetype="airleader"):
     """
     compressors_dict = get_compressornames(df)
     if filetype == "airleader":
-        # Rearrange for seconds series to lead and
-        # fill in columns for 'Consumption', 'Master.AE1 (Netzdruck)','7-bar A-Netz', 'Master.AE4'
+        """Rearrange for seconds series to lead and
+        fill in columns for 'Consumption',
+        'Master.AE1 (Netzdruck)', '7-bar A-Netz', 'Master.AE4'
+        """
         new_df = pd.DataFrame()
         first_list = [
             "seconds",
@@ -237,11 +231,10 @@ def extract_flow7A(df):
     return df, flow7Anet
 
 
-def get_seconds_column(
-    df, date="2023-11-01", filetype="airleader", datepattern="%d.%m.%Y %H:%M:%S"
-):
+def get_seconds_column(df, date, filetype, datepattern="%d.%m.%Y %H:%M:%S"):
     """
-    This function transforms the file date and time inputs into a single seconds float column
+    This function transforms the file date and
+    time inputs into a single seconds float column
     with a reference date
     """
     reference_date = pd.to_datetime(date)
@@ -249,7 +242,10 @@ def get_seconds_column(
         # Convert the 'Date' and 'TimeString' columns to datetime format
         df["time"] = df["Date"] + " " + df["TimeString"].astype(str)
         df["time"] = pd.to_datetime(df["time"], format=datepattern)
-        # Convert the datetime values to seconds via a reference date and write into new series
+        """
+        Convert the datetime values to seconds
+        via a reference date and write into new series
+        """
         df["seconds"] = (df["time"] - reference_date).dt.total_seconds()
         # Drop the 'Date'/'Time'/'TimeString' column
         df = df.drop(columns=["Date", "Time", "TimeString"])
@@ -260,7 +256,10 @@ def get_seconds_column(
         df = df.drop(columns=["Sps_datum"])
         # Convert the 'Datum' column to datetime format
         df["Datum"] = pd.to_datetime(df["Datum"], format="%d.%m.%Y %H:%M:%S")
-        # Convert the datetime values to seconds via a reference date and write into new series
+        """
+        Convert the datetime values to seconds
+        via a reference date and write into new series
+        """
         df["seconds"] = (df["Datum"] - reference_date).dt.total_seconds()
         # Drop the 'Datum' column
         df = df.drop(columns=["Datum"])
@@ -309,15 +308,15 @@ def read_flist(flist, col_list, compressors, filetype="airleader"):
         if filetype == "airleader":
             if i < 2:
                 df = pd.read_csv(filename, sep=";", usecols=col_list)
-                df = get_seconds_column(df, filetype=filetype)
+                df = get_seconds_column(df, "2023-11-01", filetype=filetype)
             else:
                 df = pd.read_csv(filename, sep=";", usecols=col_list, header=1)
                 df = get_seconds_column(
-                    df, filetype=filetype, datepattern="%d-%m-%Y %H:%M:%S"
+                    df, "2023-11-01", filetype=filetype, datepattern="%d-%m-%Y %H:%M:%S"
                 )
         elif filetype == "volumenstrom":
             df = pd.read_csv(filename, sep=";", usecols=col_list, header=1)
-            df = get_seconds_column(df, filetype=filetype)
+            df = get_seconds_column(df, "2023-11-01", filetype=filetype)
         df.replace(",", ".", regex=True, inplace=True)  # replace ',' by '.'
         df = reformat_df(df, compressors, filetype=filetype)
         li.append(df)

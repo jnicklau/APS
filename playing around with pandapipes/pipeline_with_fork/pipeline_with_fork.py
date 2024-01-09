@@ -4,11 +4,12 @@ import pandapipes.plotting as plot
 import matplotlib.pyplot as plt
 import sys
 import os
+import plotting_helper_functions as phf
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent + "\\plotting_help")
-import plotting_helper_functions as phf
+
 
 # ---------------------------------------
 

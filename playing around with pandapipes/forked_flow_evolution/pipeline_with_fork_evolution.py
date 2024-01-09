@@ -1,19 +1,18 @@
 import pandapipes as pp
 import pandas as pd
-import pandapipes.plotting as plot
-import matplotlib.pyplot as plt
 import sys
 import os
 
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent + "\\plotting_help")
-import plotting_helper_functions as phf
 import pandapower.control as control
+
+
 from pandapower.timeseries import DFData
 from pandapower.timeseries import OutputWriter
 from pandapipes.timeseries import run_timeseries
 
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent + "\\plotting_help")
 # ---------------------------------------
 
 src_folder = "grid-data"

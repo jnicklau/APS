@@ -1,6 +1,4 @@
 # train_to_p_lreg.py
-
-import pandas as pd
 import numpy as np
 
 import linear_models as lm
