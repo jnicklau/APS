@@ -23,14 +23,15 @@ if __name__ == "__main__":
     ev.print_line("READING DATA")
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
     air_leader = rd.fetch_airleader(airleader_files)
-    rd.print_df_information(air_leader, name="air_leader")
+    # rd.print_df_information(air_leader, name="air_leader")
 
     # # ------------------------------------------------------------
     # fa.time_frequency_analysis(air_leader["Consumption"])
     # fa.time_frequency_analysis(air_leader["Master.AE1 (Netzdruck)"])
 
     # ------------------------------------------------------------
-    X, y = rd.extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
+    K, V0 = rd.extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
+    X, y = K.to_numpy(), V0.to_numpy()
     X, y = rd.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X,degree = 2)
     X_train, X_val, _, y_train, y_val, _ = lm.split_train_val_test(X, y, 0.8, ps=True)

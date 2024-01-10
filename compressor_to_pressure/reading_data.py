@@ -7,6 +7,54 @@ import evalu as ev
 import filenames as fn
 
 
+def add_difference_column(df1, column_name, df2, new_column_name):
+    ev.print_line("Adding Difference Column")
+    """
+    Adds a new column with 'new_column_name' to df2
+    that contains the differences between
+    subsequent values in the 'column_name' column of df1.
+    """
+    # Check if the input is a DataFrame
+    if not isinstance(df1, pd.DataFrame):
+        raise ValueError("Input must be a Pandas DataFrame.")
+    if not isinstance(df2, pd.DataFrame):
+        raise ValueError("Input must be a Pandas DataFrame.")
+    # Check if the specified column exists in the DataFrame
+    if column_name not in df1.columns:
+        raise ValueError("Specified column does not exist in the DataFrame.")
+
+    # Calculate the differences between subsequent values in the specified column
+    differences = df1[column_name].diff()
+    differences.iloc[int(df1.index[0])] = 0
+    # Add the differences as a new column to df
+    df2[new_column_name] = differences
+    return df2
+
+
+def sum_and_remove_columns(input_df, columns_to_sum, new_column_name):
+    ev.print_line("Simplifying Network Data")
+    """
+    Takes a DataFrame as input, calculates the sum of selected columns,
+    writes the sum into a new column, and removes the selected columns.
+
+    Parameters:
+    - input_df: DataFrame
+        The input DataFrame.
+    - columns_to_sum: list
+        List of column names to be summed.
+    - new_column_name: str
+        Name of the new column where the sum will be stored.
+    Returns:
+    - DataFrame
+        Modified DataFrame with the sum and selected columns removed.
+    """
+    # Calculate the sum of selected columns
+    input_df[new_column_name] = input_df[columns_to_sum].sum(axis=1)
+    # Drop the selected columns
+    input_df.drop(columns=columns_to_sum, inplace=True)
+    return input_df
+
+
 def fetch_airleader(flist):
     ev.print_line("FETCHING AIRLEADER")
     col_list = get_significant_columns(filetype="airleader")
@@ -57,46 +105,40 @@ def extract_training_data_from_df(dfs, reggoal):
     takes a list of DataFrames
     (either 'df' and 'comp_df' (air_leader and compressor_list),
      or 'net_df' and 'p_df' (air_flow and air_leader) )
-    as arguments and returns an X,y trainable dataset of numpy arrays
+    as arguments and return two dataframe with the first
+    as target y and the second as inputs X
     """
     ev.print_line("EXTRACT TRAINING DATA")
     if reggoal == "K2V0":
         """
         compressors K --> volume flow "consumption" V_0
         """
-        # scaler = StandardScaler()
-        df = dfs[0]
         comp_df = dfs[1]
-        """ K shall be of form:  K =  [seconds, compressor motor state/flow rate]
-        """
-        consumption = df["Consumption"].to_numpy()
-        K_V_dot = np.zeros((df.index.size, comp_df.index.size))
-        K_R2 = np.zeros((df.index.size, comp_df.index.size))
+        air_leader = dfs[0]
+        # K =  [seconds, compressor motor state/flow rate]
+        consumption = air_leader["Consumption"]
+        K_V_dot = pd.DataFrame(index=air_leader.index)
+        K_R2 = pd.DataFrame()
         for i in range(comp_df.index.size):
             n = comp_df.loc[i, "Airleaderkanal"]
             columnAE1 = "%s.AE1" % n
             columnR2 = "%s.R2" % n
-            K_V_dot[:, i] = df[columnAE1].to_numpy()
-            K_R2[:, i] = df[columnR2].to_numpy()
-        K = np.concatenate((K_R2, K_V_dot), axis=1)
-        # K = scaler.fit_transform(K)
-        # consumption = scaler.fit_transform(consumption.reshape(-1, 1))
+            K_V_dot[columnAE1] = air_leader[columnAE1]
+            K_R2[columnR2] = air_leader[columnR2]
+        K = pd.concat([K_R2, K_V_dot], axis=1)
         return K, consumption
     if reggoal == "Vi2p":
-        """volume flow at i positions V_i--> pressure p
-        Vout shall be of form:
-            Vout = [seconds, flow rate]
         """
-        net_df = dfs[0]
-        p_df = dfs[1]
-        p = p_df["Master.AE1 (Netzdruck)"].to_numpy()
-        """ use "consumption" to estimate pressure p """
-        net_df["Consumption"] = p_df["Consumption"]
-        """ extract the information about measurement point 700.1 """
-        p_df, net_df["7A Netz 700.1"] = extract_flow7A(p_df)
-        V_out = net_df.to_numpy()
-        """ inverse p according to ideal gas law"""
-        # p = 1 / p
+        volume flow at i positions V_i--> pressure p
+        """
+        air_leader_df = dfs[1]
+        V_out = dfs[0]
+        p = pd.DataFrame(index=air_leader_df.index)
+        # Vout = [seconds, flow rate]
+        # extract the information about measurement point 700.1
+        air_leader_df, V_out["7A Netz 700.1"] = extract_flow7A(air_leader_df)
+        V_out["Consumption"] = air_leader_df["Consumption"]
+        p["Netzdruck"] = air_leader_df["Master.AE1 (Netzdruck)"]
         """ get pressure differences and adjust shape of V_out"""
         # p_diff = np.diff(p)
         # new_column = np.zeros((V_out.shape[0], 1))
@@ -107,8 +149,17 @@ def extract_training_data_from_df(dfs, reggoal):
         return V_out, p
 
 
+def inverse_dataframe(input_df):
+    """
+    Takes a Pandas DataFrame as input and returns
+    a DataFrame with the inverse values.
+    """
+    inverse_values = 1 / input_df
+    return inverse_values
+
+
 def scale_Xy(X, y, scaler):
-    """rescaling to a given scaler"""
+    """rescaling numpy arrays to a given scaler"""
     ev.print_line("Scaling Data")
     print("")
     X = scaler.fit_transform(X)

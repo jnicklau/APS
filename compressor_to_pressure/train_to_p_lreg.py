@@ -3,10 +3,10 @@ import numpy as np
 
 import linear_models as lm
 import autoregressive_models as arm
+import decision_tree_models as dtm
 import filenames as fn
 import reading_data as rd
 import evalu as ev
-import decision_tree_models as dtm
 
 from sklearn.preprocessing import (
     MinMaxScaler,
@@ -39,7 +39,8 @@ if __name__ == "__main__":
     # rd.print_df_information(air_leader, name="air_leader", nhead=30)
     # rd.print_df_information(air_flow, name="air_flow", nhead=30)
     # ------------------------------------------------------------
-    X, y = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
+    V_out, p = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
+    X, y = V_out.to_numpy(), p.to_numpy()
     X, y = rd.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X, degree=dg)
     X_train, X_val, X_test, y_train, y_val, y_test = lm.split_train_val_test(
