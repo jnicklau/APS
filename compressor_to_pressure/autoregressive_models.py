@@ -25,9 +25,9 @@ def ar_sel_train(y, **kwargs):
 
 def arimax_train(y, **kwargs):
     if "exog" in kwargs:
-        print("ARIMAX ")
+        ev.print_line("ARIMAX")
     else:
-        print("ARIMA ")
+        ev.print_line("ARIMA")
     model = ARIMA(y, **kwargs)
     results = model.fit()
     return results, model.model_orders

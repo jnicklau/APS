@@ -1,26 +1,17 @@
 # linear_models.py
 import numpy as np
 import evalu as ev
+import statsmodels.api as sm
 
 from sklearn import linear_model
-
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 
 
-def split_train_val_test(X, y, r1=0.5, r2=0.5, ps=False):
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=r1, shuffle=False
-    )
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=r2, shuffle=False
-    )
-    if ps:
-        print("\nshape of X and y: ", np.shape(X), np.shape(y))
-        print("shape of X_train and y_train: ", np.shape(X_train), np.shape(y_train))
-        print("shape of X_val and y_val: ", np.shape(X_val), np.shape(y_val))
-        print("shape of X_test and y_test: ", np.shape(X_test), np.shape(y_test), "\n")
-    return X_train, X_val, X_test, y_train, y_val, y_test
+def sm_linear_regression_train(X, y):
+    ev.print_line("StatsModels LinearRegression")
+    model = sm.OLS(y, X)
+    results = model.fit()
+    return results
 
 
 def linear_regression_train(X, y, **kwargs):

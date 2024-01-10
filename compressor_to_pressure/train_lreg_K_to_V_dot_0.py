@@ -12,6 +12,7 @@ from sklearn.preprocessing import (
     StandardScaler,
     MaxAbsScaler,
 )
+import data_preprocessing as dpp
 
 
 airleader_files = fn.all_air_leader_files
@@ -32,9 +33,9 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     K, V0 = rd.extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
     X, y = K.to_numpy(), V0.to_numpy()
-    X, y = rd.scale_Xy(X, y, scaler)
+    X, y = dpp.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X,degree = 2)
-    X_train, X_val, _, y_train, y_val, _ = lm.split_train_val_test(X, y, 0.8, ps=True)
+    X_train, X_val, _, y_train, y_val, _ = dpp.split_train_val_test(X, y, 0.8, ps=True)
     # print("X_train[0:20,:] \n", X_train[0:20, :])
     # print("y_train[0:25] \n", y_train[0:25])
 

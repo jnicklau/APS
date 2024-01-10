@@ -7,54 +7,6 @@ import evalu as ev
 import filenames as fn
 
 
-def add_difference_column(df1, column_name, df2, new_column_name):
-    ev.print_line("Adding Difference Column")
-    """
-    Adds a new column with 'new_column_name' to df2
-    that contains the differences between
-    subsequent values in the 'column_name' column of df1.
-    """
-    # Check if the input is a DataFrame
-    if not isinstance(df1, pd.DataFrame):
-        raise ValueError("Input must be a Pandas DataFrame.")
-    if not isinstance(df2, pd.DataFrame):
-        raise ValueError("Input must be a Pandas DataFrame.")
-    # Check if the specified column exists in the DataFrame
-    if column_name not in df1.columns:
-        raise ValueError("Specified column does not exist in the DataFrame.")
-
-    # Calculate the differences between subsequent values in the specified column
-    differences = df1[column_name].diff()
-    differences.iloc[int(df1.index[0])] = 0
-    # Add the differences as a new column to df
-    df2[new_column_name] = differences
-    return df2
-
-
-def sum_and_remove_columns(input_df, columns_to_sum, new_column_name):
-    ev.print_line("Simplifying Network Data")
-    """
-    Takes a DataFrame as input, calculates the sum of selected columns,
-    writes the sum into a new column, and removes the selected columns.
-
-    Parameters:
-    - input_df: DataFrame
-        The input DataFrame.
-    - columns_to_sum: list
-        List of column names to be summed.
-    - new_column_name: str
-        Name of the new column where the sum will be stored.
-    Returns:
-    - DataFrame
-        Modified DataFrame with the sum and selected columns removed.
-    """
-    # Calculate the sum of selected columns
-    input_df[new_column_name] = input_df[columns_to_sum].sum(axis=1)
-    # Drop the selected columns
-    input_df.drop(columns=columns_to_sum, inplace=True)
-    return input_df
-
-
 def fetch_airleader(flist):
     ev.print_line("FETCHING AIRLEADER")
     col_list = get_significant_columns(filetype="airleader")
@@ -156,15 +108,6 @@ def inverse_dataframe(input_df):
     """
     inverse_values = 1 / input_df
     return inverse_values
-
-
-def scale_Xy(X, y, scaler):
-    """rescaling numpy arrays to a given scaler"""
-    ev.print_line("Scaling Data")
-    print("")
-    X = scaler.fit_transform(X)
-    y = scaler.fit_transform(y.reshape(-1, 1))
-    return X, y
 
 
 def get_max_volume_flow(df, i):

@@ -8,17 +8,23 @@ import autoregressive_models as am
 import filenames as fn
 import reading_data as rd
 import evalu as ev
+import data_preprocessing as dpp
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    StandardScaler,
+    MaxAbsScaler,
+)
 
+# airleader_files = fn.all_air_leader_files
+airleader_files = [fn.d1_air_leader_file]
+# airleader_files = [fn.h1_air_leader_file]
+# airleader_files = [fn.short_air_leader_file]
 
-def train_and_evaluate_different_functions(X, y, foo, **kwargs):
-    model = foo(
-        X_train,
-        y_train,
-        params=kwargs.get("params", [1e-6] * 2),
-    )
-    y_pred, y_std = model.predict(X_test, return_std=True)
-    return *ev.metrics(y_test, y_pred), y_std[-1]
-
+# airflow_files = fn.flow_file
+airflow_files = fn.d1_flow_file
+# airflow_files = fn.h1_flow_file
+# airflow_files = fn.short_flow_file
+scaler = StandardScaler()
 
 # ------------------------------------------------------------
 if __name__ == "__main__":
@@ -39,10 +45,10 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     V_out, p = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
     X, y = V_out.to_numpy(), p.to_numpy()
-    X, y = rd.scale_Xy(X, y, scaler)
+    X, y = dpp.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X,degree = 2)
     myseed = 42
-    X_train, X_val, X_test, y_train, y_val, y_test = lm.split_train_val_test(
+    X_train, X_val, X_test, y_train, y_val, y_test = dpp.split_train_val_test(
         X, y, 0.1, ps=True
     )
 

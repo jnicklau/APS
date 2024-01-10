@@ -1,14 +1,16 @@
 # eval.py
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import statsmodels.api as sm
-import scipy.stats as stats
+
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import (
     cross_val_score,
     LearningCurveDisplay,
 )
 import reading_data as rd
+import pandas as pd
 
 
 def print_line(mstring=""):
@@ -39,8 +41,9 @@ def cross_validation(X, y, model, **kwargs):
     return scores
 
 
-def qqplot(y):
-    sm.qqplot(y, stats.t, fit=True, line="45")
+def qqplot(y, dist, distname):
+    sm.qqplot(y, dist, fit=True, line="45")
+    plt.title("Quantile-Quantile Plot vs %s-Distribution" % distname)
     plt.show()
 
 
@@ -117,6 +120,41 @@ def get_labels_from_reggoal(reggoal):
         return "data(/time) points", "pressure $p$"
     else:
         return "", ""
+
+
+def plot_resids_dist(residuals, **kwargs):
+    sns.set_theme()
+    sns.displot(
+        residuals,
+        bins=20,
+    )
+    plt.xlabel("Residuals")
+    plt.ylabel("Counts")
+    plt.title("Histogram of Residuals")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_resids_vs_predictors(residuals, X, df, **kwargs):
+    for i, predictor in enumerate(df.columns):
+        plt.scatter(X[:, i + 1], residuals)
+        plt.xlabel(predictor)
+        plt.ylabel("Residuals")
+        plt.title("Residuals vs. %s" % (predictor))
+        plt.show()
+
+
+def plot_resids_vs_target(residuals, y, targetname, **kwargs):
+    plt.scatter(y.ravel(), residuals)
+    plt.xlabel(targetname)
+    plt.ylabel("Residuals")
+    plt.title("Residuals vs. %s" % (targetname))
+    plt.show()
+
+
+def plot_resids(residuals, **kwargs):
+    df = pd.DataFrame(residuals, columns=["resids"])
+    sns.lineplot(residuals)
 
 
 def plot_ar_model_vs_real(alltime, testtime, alldata, predictions, **kwargs):
@@ -226,6 +264,7 @@ def print_model_metrics(y_test, y_pred, y_pred_baseline):
         "Coefficient of determination R2 of baseline: %.3f"
         % r2_score(y_test, y_pred_baseline)
     )
+    return
 
 
 # ===========================================================
