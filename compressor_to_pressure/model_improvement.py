@@ -1,4 +1,5 @@
 # model_improvement.py
+import evalu as ev
 
 
 def train_and_evaluate_different_functions(X, y, foo, **kwargs):

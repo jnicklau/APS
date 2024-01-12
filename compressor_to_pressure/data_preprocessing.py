@@ -58,14 +58,15 @@ def sum_and_remove_columns(input_df, columns_to_sum, new_column_name):
     - new_column_name: str
         Name of the new column where the sum will be stored.
     Returns:
-    - DataFrame
+    - output_df = DataFrame
         Modified DataFrame with the sum and selected columns removed.
     """
+    output_df = input_df.copy()
     # Calculate the sum of selected columns
-    input_df[new_column_name] = input_df[columns_to_sum].sum(axis=1)
+    output_df[new_column_name] = output_df[columns_to_sum].sum(axis=1)
     # Drop the selected columns
-    input_df.drop(columns=columns_to_sum, inplace=True)
-    return input_df
+    output_df.drop(columns=columns_to_sum, inplace=True)
+    return output_df
 
 
 def scale_Xy(X, y, scaler):
@@ -73,7 +74,6 @@ def scale_Xy(X, y, scaler):
     rescaling numpy arrays to a given scaler
     """
     ev.print_line("Scaling Data")
-    print("")
     X = scaler.fit_transform(X)
     y = scaler.fit_transform(y.reshape(-1, 1))
     return X, y

@@ -2,6 +2,7 @@
 
 from statsmodels.tsa.ar_model import AutoReg, ar_select_order
 from statsmodels.tsa.arima.model import ARIMA
+import evalu as ev
 
 
 def ar_train(y, **kwargs):

@@ -69,16 +69,15 @@ def extract_training_data_from_df(dfs, reggoal):
         air_leader = dfs[0]
         # K =  [seconds, compressor motor state/flow rate]
         consumption = air_leader["Consumption"]
-        K_V_dot = pd.DataFrame(index=air_leader.index)
+        K_AE1 = pd.DataFrame(index=air_leader.index)
         K_R2 = pd.DataFrame()
         for i in range(comp_df.index.size):
             n = comp_df.loc[i, "Airleaderkanal"]
             columnAE1 = "%s.AE1" % n
             columnR2 = "%s.R2" % n
-            K_V_dot[columnAE1] = air_leader[columnAE1]
+            K_AE1[columnAE1] = air_leader[columnAE1]
             K_R2[columnR2] = air_leader[columnR2]
-        K = pd.concat([K_R2, K_V_dot], axis=1)
-        return K, consumption
+        return K_AE1, K_R2, consumption
     if reggoal == "Vi2p":
         """
         volume flow at i positions V_i--> pressure p

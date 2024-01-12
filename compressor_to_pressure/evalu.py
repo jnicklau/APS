@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 import statsmodels.api as sm
 
 from sklearn.metrics import mean_squared_error, r2_score
@@ -10,7 +11,6 @@ from sklearn.model_selection import (
     LearningCurveDisplay,
 )
 import reading_data as rd
-import pandas as pd
 
 
 def print_line(mstring=""):
@@ -135,17 +135,19 @@ def plot_resids_dist(residuals, **kwargs):
     plt.show()
 
 
-def plot_resids_vs_predictors(residuals, X, df, **kwargs):
-    for i, predictor in enumerate(df.columns):
-        plt.scatter(X[:, i + 1], residuals)
-        plt.xlabel(predictor)
-        plt.ylabel("Residuals")
-        plt.title("Residuals vs. %s" % (predictor))
-        plt.show()
+def plot_resids_vs_predictors(residuals, X, datat, **kwargs):
+    for i, predictor in enumerate(datat.columns):
+        print(np.shape(datat))
+        if i > 0:
+            sns.jointplot(data=datat, x=predictor, y=residuals, **kwargs)
+            plt.xlabel(predictor)
+            plt.ylabel("Residuals")
+            plt.title("Residuals vs. %s" % (predictor))
+            plt.show()
 
 
-def plot_resids_vs_target(residuals, y, targetname, **kwargs):
-    plt.scatter(y.ravel(), residuals)
+def plot_resids_vs_target(residuals, y, datat, targetname, **kwargs):
+    sns.jointplot(data=datat, x=datat[targetname], y=residuals, **kwargs)
     plt.xlabel(targetname)
     plt.ylabel("Residuals")
     plt.title("Residuals vs. %s" % (targetname))
@@ -154,7 +156,9 @@ def plot_resids_vs_target(residuals, y, targetname, **kwargs):
 
 def plot_resids(residuals, **kwargs):
     df = pd.DataFrame(residuals, columns=["resids"])
+    plt.ylabel("Residuals")
     sns.lineplot(residuals)
+    plt.show()
 
 
 def plot_ar_model_vs_real(alltime, testtime, alldata, predictions, **kwargs):
@@ -250,19 +254,19 @@ def single_compressor_contributions(model, compressors):
     return single_compr_cons
 
 
-def print_model_metrics(y_test, y_pred, y_pred_baseline):
+def print_model_metrics(y_true, y_pred, y_pred_baseline):
     # The mean squared error
     print_line("Model Metrics")
-    print("Mean squared error of model: %.4f" % mean_squared_error(y_test, y_pred))
+    print("Mean squared error of model: %.4f" % mean_squared_error(y_true, y_pred))
     print(
         "Mean squared error of baseline: %.4f"
-        % mean_squared_error(y_test, y_pred_baseline)
+        % mean_squared_error(y_true, y_pred_baseline)
     )
     # The coefficient of determination: 1 is perfect prediction
-    print("Coefficient of determination R2 of model: %.3f" % r2_score(y_test, y_pred))
+    print("Coefficient of determination R2 of model: %.3f" % r2_score(y_true, y_pred))
     print(
         "Coefficient of determination R2 of baseline: %.3f"
-        % r2_score(y_test, y_pred_baseline)
+        % r2_score(y_true, y_pred_baseline)
     )
     return
 

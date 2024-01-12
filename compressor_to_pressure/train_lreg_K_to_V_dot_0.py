@@ -13,6 +13,7 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
 )
 import data_preprocessing as dpp
+import scipy.stats as stats
 
 
 airleader_files = fn.all_air_leader_files
@@ -31,7 +32,10 @@ if __name__ == "__main__":
     # fa.time_frequency_analysis(air_leader["Master.AE1 (Netzdruck)"])
 
     # ------------------------------------------------------------
-    K, V0 = rd.extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
+    K_AE1, K_R2, V0 = rd.extract_training_data_from_df(
+        [air_leader, compressors], reggoal="K2V0"
+    )
+    K = pd.concat([K_R2, K_AE1], axis=1)
     X, y = K.to_numpy(), V0.to_numpy()
     X, y = dpp.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X,degree = 2)
@@ -49,18 +53,23 @@ if __name__ == "__main__":
         # alpha=3.16,
     )
     model = lr_model
+    residuals = -lr_model.predict(X_train) + y_train.ravel()
+    # ev.plot_resids(residuals)
+    ev.plot_resids_dist(residuals)
+    ev.plot_resids_vs_target(residuals, y_train, "Consumption")
+    ev.qqplot(residuals, stats.norm, "norm")
     # ------------------------------------------------------------
     y_pred = lr_model.predict(X_val)
     y_pred_baseline = np.full(np.shape(y_pred), np.mean(y_train))
     # ev.plot_learn_curve(lr_model,X_train,y_train,cv = 5)
 
     # ------------------------------------------------------------
-    ev.coeff_analysis(
-        lr_model,
-        compressors,
-        plotbool=True,
-        reggoal="K2V0",
-    )
+    # ev.coeff_analysis(
+    #     lr_model,
+    #     compressors,
+    #     plotbool=False,
+    #     reggoal="K2V0",
+    # )
     ev.print_model_metrics(
         y_val,
         y_pred,

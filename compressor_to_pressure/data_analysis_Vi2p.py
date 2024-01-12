@@ -13,21 +13,24 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import data_preprocessing as dpp
 
-# airleader_files = fn.all_air_leader_files
+airleader_files = fn.all_air_leader_files
 # airleader_files = [fn.d1_air_leader_file]
 # airleader_files = [fn.h1_air_leader_file]
-airleader_files = [fn.short_air_leader_file]
+# airleader_files = [fn.short_air_leader_file]
 
-# airflow_files = fn.flow_file
+airflow_files = fn.flow_file
 # airflow_files = fn.d1_flow_file
 # airflow_files = fn.h1_flow_file
-airflow_files = fn.short_flow_file
+# airflow_files = fn.short_flow_file
 
 scaler = StandardScaler()
-V_out_names = [
-    "7B Netz 800.1",
+seperator = 90
+V_internal_names = [
     "7A Netz 700.5",
     "7A Netz 700.6",
+]
+V_out_names = [
+    "7B Netz 800.1",
     "7C Netz 900.1",
     "7A Netz 700.1",
 ]
@@ -50,21 +53,23 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     Vi, p = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
     Vi = dpp.add_difference_column(p, "Netzdruck", Vi, "Netzdruck Diff")
-    # rd.print_df_information(p, name="p")
-    # rd.print_df_information(Vi, name="Vi",nhead = 40)
-    dpp.sum_and_remove_columns(Vi, V_out_names, "V_out")
-    # rd.print_df_information(Vi, name="Vi_simplified",nhead = 40)
-    data = pd.concat([p, Vi], axis=1)
+    V_out = Vi.drop(columns=V_internal_names)
+    V_simple = dpp.sum_and_remove_columns(V_out, V_out_names, "V_out sum")
+    data = pd.concat([p, V_simple], axis=1)
+
+    data_low_in = data[data["Consumption"] < seperator]
+    data_high_in = data[data["Consumption"] >= seperator]
+
     # X, y = Vi.to_numpy(), p.to_numpy()
     # X, y = dpp.scale_Xy(X, y, scaler)
     # ------------------------------------------------------------
     # Apply the default theme
     sns.set_theme()
-
-    for i in range(data.shape[1]):
-        #     sns.displot(data, x=data.columns[i], kde=True,bins = 50)
-        print("sum of data.[%s]: " % data.columns[i], data[data.columns[i]].sum())
-    #     plt.show()
+    da.make_hists(data_low_in)
+    da.make_hists(data_high_in)
+    print(da.get_distr_metrics(data_low_in["Netzdruck"].to_numpy()))
+    print(da.get_distr_metrics(data_high_in["Netzdruck"].to_numpy()))
+    # da.make_hists(data)
 
     # sns.relplot(x=p.index, y=data["Netzdruck Diff"],)
     # plt.show()
@@ -77,8 +82,8 @@ if __name__ == "__main__":
     # sns.displot(data, x="Netzdruck Diff", kde=True,bins = 50)
     # # sns.displot(data, x="Netzdruck Diff", kind="kde")
     # plt.show()
-    sns.pairplot(data, kind="kde", diag_kind="hist")
-    plt.show()
+    # sns.pairplot(data, kind="kde", diag_kind="hist")
+    # plt.show()
     # sns.jointplot(x="Netzdruck Diff", y="Consumption", data=data, kind="reg")
     # plt.show()
     # methods = [

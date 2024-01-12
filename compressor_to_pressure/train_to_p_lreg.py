@@ -19,21 +19,22 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
 )
 
-# airleader_files = fn.all_air_leader_files
+airleader_files = fn.all_air_leader_files
 # airleader_files = [fn.d1_air_leader_file]
-airleader_files = [fn.h1_air_leader_file]
+# airleader_files = [fn.h1_air_leader_file]
 # airleader_files = [fn.short_air_leader_file]
 
-# airflow_files = fn.flow_file
+airflow_files = fn.flow_file
 # airflow_files = fn.d1_flow_file
-airflow_files = fn.h1_flow_file
+# airflow_files = fn.h1_flow_file
 # airflow_files = fn.short_flow_file
 
-scaler = StandardScaler()
-V_out_names = [
-    "7B Netz 800.1",
+V_internal_names = [
     "7A Netz 700.5",
     "7A Netz 700.6",
+]
+V_out_names = [
+    "7B Netz 800.1",
     "7C Netz 900.1",
     "7A Netz 700.1",
 ]
@@ -41,7 +42,8 @@ n_cv = 5
 n_cv1 = 1
 n_cv2 = 1
 dg = 2
-
+scaler = StandardScaler()
+seperator = 90
 # ------------------------------------------------------------
 if __name__ == "__main__":
     # ------------------------------------------------------------
@@ -61,21 +63,19 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     Vi, p = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
     Vi = dpp.add_difference_column(p, "Netzdruck", Vi, "Netzdruck Diff")
-    rd.print_df_information(p, name="p")
-    # rd.print_df_information(Vi, name="Vi",nhead = 40)
-    dpp.sum_and_remove_columns(Vi, V_out_names, "V_out")
-    rd.print_df_information(Vi, name="Vi_simplified", nhead=40)
-    data = pd.concat([p, Vi], axis=1)
-
-    X, y = Vi.to_numpy(), p.to_numpy()
+    V_out = Vi.drop(columns=V_internal_names)
+    V_simple = dpp.sum_and_remove_columns(V_out, V_out_names, "V_out sum")
+    data = pd.concat([p, V_simple], axis=1)
+    data_high_in = data[data["Consumption"] >= seperator]
+    V_high_in = data_high_in[["Consumption", "V_out sum", "Netzdruck Diff"]]
+    p_high_in = data_high_in[["Netzdruck"]]
+    X, y = V_high_in.to_numpy(), p_high_in.to_numpy()
+    # X,y = V_simple.to_numpy(), p.to_numpy()
     X, y = dpp.scale_Xy(X, y, scaler)
-    print("X[0,:]", X[0, :])
-
     # X = lm.extend_to_polynomial(X, degree=dg)
     X = sm.add_constant(X)
-    print("X[0,:]", X[0, :])
     X_train, X_val, _, y_train, y_val, _ = dpp.split_train_val_test(X, y, 0.1, ps=True)
-
+    data_train = data_high_in.loc[: np.shape(X_train)[0] - 1]
     # ------------------------------------------------------------
     y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_val)[0]))
     resid_aray = np.zeros((n_cv1, n_cv2, np.shape(y_train)[0]))
@@ -102,10 +102,20 @@ if __name__ == "__main__":
             residuals = -lr_model.predict(X_train) + y_train.ravel()
             y_pred_array[i, j, :] = y_pred.reshape(1, -1)
             resid_aray[i, j, :] = residuals
+            rd.print_df_information(data_train, name="data_train")
             ev.plot_resids(residuals)
             ev.plot_resids_dist(residuals)
-            ev.plot_resids_vs_predictors(residuals, X_train, Vi)
-            ev.plot_resids_vs_target(residuals, y_train, "Netzdruck")
+            ev.plot_resids_vs_target(
+                residuals,
+                y_train,
+                data_train,
+                "Netzdruck",
+                kind="hex",
+                gridsize=50,
+            )
+            ev.plot_resids_vs_predictors(
+                residuals, X_train, data_train, kind="hex", gridsize=50
+            )
             ev.qqplot(residuals, stats.norm, "norm")
     metrics_array = ev.comp_and_eval_predictions(y_pred_array, y_val)
     # y_pred, y_std = lr_model.predict(X_val, return_std=True)
