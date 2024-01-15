@@ -23,7 +23,16 @@ def print_line(mstring=""):
 
 
 def comp_and_eval_predictions(y_pred_array, y_true, **kwargs):
-    """for each predictions make a space for r2 value and mse value"""
+    """
+    Evaluate predictions by computing R-squared and MSE for each.
+
+    Parameters:
+    - y_pred_array (numpy.ndarray): Array containing predictions.
+    - y_true (numpy.ndarray): True values.
+
+    Returns:
+    numpy.ndarray: Array containing R-squared and MSE values for each prediction.
+    """
     metrics_array = np.zeros((np.shape(y_pred_array)[0], np.shape(y_pred_array)[1], 2))
     for i in range(np.shape(y_pred_array)[0]):
         for j in range(np.shape(y_pred_array)[1]):
@@ -33,6 +42,18 @@ def comp_and_eval_predictions(y_pred_array, y_true, **kwargs):
 
 
 def cross_validation(X, y, model, **kwargs):
+    """
+    Perform cross-validation for a given model.
+
+    Parameters:
+    - X (numpy.ndarray): Feature matrix.
+    - y (numpy.ndarray): Target values.
+    - model: The machine learning model.
+    - **kwargs: Additional keyword arguments for cross_val_score.
+
+    Returns:
+    numpy.ndarray: Array of cross-validation scores.
+    """
     print_line("CROSS VALIDATION")
     scores = cross_val_score(model, X, y.ravel(), **kwargs)
     print(
@@ -42,6 +63,17 @@ def cross_validation(X, y, model, **kwargs):
 
 
 def qqplot(y, dist, distname):
+    """
+    Generate a Quantile-Quantile plot.
+
+    Parameters:
+    - y (numpy.ndarray): Data to be plotted.
+    - dist: Theoretical distribution.
+    - distname (str): Name of the distribution.
+
+    Returns:
+    None
+    """
     sm.qqplot(y, dist, fit=True, line="45")
     plt.title("Quantile-Quantile Plot vs %s-Distribution" % distname)
     plt.show()
@@ -135,10 +167,24 @@ def plot_resids_dist(residuals, **kwargs):
     plt.show()
 
 
-def plot_resids_vs_predictors(residuals, X, datat, **kwargs):
+def plot_resids_vs_predictors(residuals, X, datat, pcolumns, **kwargs):
+    """
+    This function creates a series of joint plots, each displaying
+    the relationship between the residuals and an individual predictor
+    variable. The joint plots include scatter plots with marginal histograms.
+
+    Parameters:
+    - residuals (numpy.ndarray): Array of residuals obtained from a regression model.
+    - X (numpy.ndarray): Feature matrix corresponding to the predictors.
+    - datat (pandas.DataFrame): DataFrame containing the predictor variables.
+    - pcolumns (list): List of columns for which the residuals are to be plotted agains
+    - **kwargs: Additional keyword arguments to be passed to seaborn.jointplot.
+
+    Returns:
+    None
+    """
     for i, predictor in enumerate(datat.columns):
-        print(np.shape(datat))
-        if i > 0:
+        if i in pcolumns:
             sns.jointplot(data=datat, x=predictor, y=residuals, **kwargs)
             plt.xlabel(predictor)
             plt.ylabel("Residuals")
@@ -155,7 +201,6 @@ def plot_resids_vs_target(residuals, y, datat, targetname, **kwargs):
 
 
 def plot_resids(residuals, **kwargs):
-    df = pd.DataFrame(residuals, columns=["resids"])
     plt.ylabel("Residuals")
     sns.lineplot(residuals)
     plt.show()

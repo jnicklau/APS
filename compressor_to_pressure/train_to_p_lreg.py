@@ -22,12 +22,12 @@ from sklearn.preprocessing import (
 airleader_files = fn.all_air_leader_files
 # airleader_files = [fn.d1_air_leader_file]
 # airleader_files = [fn.h1_air_leader_file]
-# airleader_files = [fn.short_air_leader_file]
+airleader_files = [fn.short_air_leader_file]
 
 airflow_files = fn.flow_file
 # airflow_files = fn.d1_flow_file
 # airflow_files = fn.h1_flow_file
-# airflow_files = fn.short_flow_file
+airflow_files = fn.short_flow_file
 
 V_internal_names = [
     "7A Netz 700.5",
@@ -42,48 +42,68 @@ n_cv = 5
 n_cv1 = 1
 n_cv2 = 1
 dg = 2
+r1 = 0.2
 scaler = StandardScaler()
 seperator = 90
+reference_date = "2023-11-01"
 # ------------------------------------------------------------
 if __name__ == "__main__":
     # ------------------------------------------------------------
     ev.print_line("READING DATA")
-    air_leader = rd.fetch_airleader(airleader_files)
-    air_flow = rd.fetch_airflow(airflow_files)
+    air_leader = rd.fetch_airleader(airleader_files, reference_date)
+    air_flow = rd.fetch_airflow(airflow_files, reference_date)
     # ------------------------------------------------------------
     common_times = rd.get_common_times(air_leader, air_flow)
     air_leader, air_flow = rd.put_on_same_time_interval(
         air_leader,
         air_flow,
         common_times,
-        method="linear",
+        method="ffill",
     )
     # rd.print_df_information(air_leader, name="air_leader", nhead=30)
     # rd.print_df_information(air_flow, name="air_flow", nhead=30)
     # ------------------------------------------------------------
     Vi, p = rd.extract_training_data_from_df([air_flow, air_leader], reggoal="Vi2p")
-    Vi = dpp.add_difference_column(p, "Netzdruck", Vi, "Netzdruck Diff")
+    # Vi = dpp.add_difference_column(p, "Netzdruck", Vi, "Netzdruck Diff")
     V_out = Vi.drop(columns=V_internal_names)
     V_simple = dpp.sum_and_remove_columns(V_out, V_out_names, "V_out sum")
-    data = pd.concat([p, V_simple], axis=1)
-    data_high_in = data[data["Consumption"] >= seperator]
-    V_high_in = data_high_in[["Consumption", "V_out sum", "Netzdruck Diff"]]
-    p_high_in = data_high_in[["Netzdruck"]]
-    X, y = V_high_in.to_numpy(), p_high_in.to_numpy()
-    # X,y = V_simple.to_numpy(), p.to_numpy()
-    X, y = dpp.scale_Xy(X, y, scaler)
-    # X = lm.extend_to_polynomial(X, degree=dg)
-    X = sm.add_constant(X)
-    X_train, X_val, _, y_train, y_val, _ = dpp.split_train_val_test(X, y, 0.1, ps=True)
-    data_train = data_high_in.loc[: np.shape(X_train)[0] - 1]
     # ------------------------------------------------------------
-    y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_val)[0]))
-    resid_aray = np.zeros((n_cv1, n_cv2, np.shape(y_train)[0]))
+    data = pd.concat([p, V_simple], axis=1)
+    # rd.print_df_information(data, name="data")
+    data = dpp.add_time_patterns(data, reference_date)
+    # rd.print_df_information(data, name="data with time patterns")
+    data_high_in = data[data["Consumption"] >= seperator]
+    train_data, val_data, test_data = dpp.split_train_val_test_df(
+        data_high_in,
+        r1=r1,
+        ps=True,
+        shuffle=True,
+    )
+    # rd.print_df_information(train_data,name='train_data')
+    # ------------------------------------------------------------
+    (
+        X_train,
+        X_val,
+        X_test,
+        y_train,
+        y_val,
+        y_test,
+        scalers,
+    ) = dpp.get_scaled_xy_from_splitted_df(
+        train_data,
+        val_data,
+        test_data,
+        scaler,
+    )
+    # ------------------------------------------------------------
     depths = np.linspace(1, 10, n_cv1)
     mids = np.logspace(-10, -5, n_cv1)  # min_impurity_decrease
     if n_cv1 * n_cv2 > 1:
         ev.print_line("Manual HPS")
 
+    y_pred_array = np.zeros((n_cv1, n_cv2, np.shape(y_val)[0]))
+    resid_aray = np.zeros((n_cv1, n_cv2, np.shape(y_train)[0]))
+    ev.print_line("Train")
     for i in range(n_cv1):
         for j in range(n_cv2):
             lr_model = lm.sm_linear_regression_train(
@@ -102,19 +122,21 @@ if __name__ == "__main__":
             residuals = -lr_model.predict(X_train) + y_train.ravel()
             y_pred_array[i, j, :] = y_pred.reshape(1, -1)
             resid_aray[i, j, :] = residuals
-            rd.print_df_information(data_train, name="data_train")
+    ev.print_line("Analyse")
+    for i in range(n_cv1):
+        for j in range(n_cv2):
             ev.plot_resids(residuals)
             ev.plot_resids_dist(residuals)
             ev.plot_resids_vs_target(
                 residuals,
                 y_train,
-                data_train,
+                train_data,
                 "Netzdruck",
                 kind="hex",
                 gridsize=50,
             )
             ev.plot_resids_vs_predictors(
-                residuals, X_train, data_train, kind="hex", gridsize=50
+                residuals, X_train, train_data, pcolumns=[1, 2], kind="hex", gridsize=50
             )
             ev.qqplot(residuals, stats.norm, "norm")
     metrics_array = ev.comp_and_eval_predictions(y_pred_array, y_val)

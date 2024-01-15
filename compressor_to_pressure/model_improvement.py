@@ -4,12 +4,12 @@ import evalu as ev
 
 def train_and_evaluate_different_functions(X, y, foo, **kwargs):
     model = foo(
-        X_train,
-        y_train,
+        X,
+        y,
         params=kwargs.get("params", [1e-6] * 2),
     )
-    y_pred, y_std = model.predict(X_test, return_std=True)
-    return *ev.metrics(y_test, y_pred), y_std[-1]
+    y_pred, y_std = model.predict(X, return_std=True)
+    return *ev.metrics(y, y_pred), y_std[-1]
 
 
 if __name__ == "__main__":

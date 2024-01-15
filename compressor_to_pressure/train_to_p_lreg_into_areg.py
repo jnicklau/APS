@@ -1,6 +1,5 @@
 # train.py
 
-import pandas as pd
 import numpy as np
 
 import linear_models as lm
@@ -48,8 +47,8 @@ if __name__ == "__main__":
     X, y = dpp.scale_Xy(X, y, scaler)
     # X = lm.extend_to_polynomial(X,degree = 2)
     myseed = 42
-    X_train, X_val, X_test, y_train, y_val, y_test = dpp.split_train_val_test(
-        X, y, 0.1, ps=True
+    X_train, X_val, X_test, y_train, y_val, y_test = dpp.split_train_val_test_xy(
+        X, y, 0.1, ps=True, shuffle=False
     )
 
     # ------------------------------------------------------------

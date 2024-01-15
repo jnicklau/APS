@@ -26,7 +26,9 @@ if __name__ == "__main__":
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
     air_leader = rd.fetch_airleader(airleader_files)
     # ------------------------------------------------------------
-    K, V0 = rd.extract_training_data_from_df([air_leader, compressors], reggoal="K2V0")
+    K_AE1, K_R2, V0 = rd.extract_training_data_from_df(
+        [air_leader, compressors], reggoal="K2V0"
+    )
     K = pd.concat([K_R2, K_AE1], axis=1)
     data = pd.concat([V0, K], axis=1)
     rd.print_df_information(K)

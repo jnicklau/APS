@@ -7,20 +7,20 @@ import evalu as ev
 import filenames as fn
 
 
-def fetch_airleader(flist):
+def fetch_airleader(flist, reference_date):
     ev.print_line("FETCHING AIRLEADER")
     col_list = get_significant_columns(filetype="airleader")
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
-    li = read_flist(flist, col_list, compressors)
+    li = read_flist(flist, col_list, compressors, "airleader", reference_date)
     air_leader = pd.concat(li, axis=0)
     return air_leader
 
 
-def fetch_airflow(fname):
+def fetch_airflow(fname, reference_date):
     ev.print_line("FETCHING AIRFLOW")
     col_list = get_significant_columns(filetype="volumenstrom")
     compressors = pd.read_table(fn.compressor_list_file, sep=",")
-    li = read_flist([fname], col_list, compressors, "volumenstrom")
+    li = read_flist([fname], col_list, compressors, "volumenstrom", reference_date)
     air_flow = pd.concat(li, axis=0)
     return air_flow
 
@@ -54,49 +54,30 @@ def print_df_information(df, **kwargs):
 
 def extract_training_data_from_df(dfs, reggoal):
     """
-    takes a list of DataFrames
-    (either 'df' and 'comp_df' (air_leader and compressor_list),
-     or 'net_df' and 'p_df' (air_flow and air_leader) )
-    as arguments and return two dataframe with the first
-    as target y and the second as inputs X
+    Extract training data from a list of DataFrames.
+    Parameters:
+    - dfs (list): A list of DataFrames containing the required data.
+    - reggoal (str): The regression goal ("K2V0" or "Vi2p").
+    Returns:
+    tuple: Three/Two DataFrames, the last as the target (y)
     """
     ev.print_line("EXTRACT TRAINING DATA")
     if reggoal == "K2V0":
-        """
-        compressors K --> volume flow "consumption" V_0
-        """
-        comp_df = dfs[1]
-        air_leader = dfs[0]
-        # K =  [seconds, compressor motor state/flow rate]
+        comp_df, air_leader = dfs[1], dfs[0]
         consumption = air_leader["Consumption"]
-        K_AE1 = pd.DataFrame(index=air_leader.index)
-        K_R2 = pd.DataFrame()
+        K_AE1, K_R2 = pd.DataFrame(index=air_leader.index), pd.DataFrame()
         for i in range(comp_df.index.size):
             n = comp_df.loc[i, "Airleaderkanal"]
-            columnAE1 = "%s.AE1" % n
-            columnR2 = "%s.R2" % n
+            columnAE1, columnR2 = f"{n}.AE1", f"{n}.R2"
             K_AE1[columnAE1] = air_leader[columnAE1]
             K_R2[columnR2] = air_leader[columnR2]
         return K_AE1, K_R2, consumption
     if reggoal == "Vi2p":
-        """
-        volume flow at i positions V_i--> pressure p
-        """
-        air_leader_df = dfs[1]
-        V_out = dfs[0]
+        air_leader_df, V_out = dfs[1], dfs[0]
         p = pd.DataFrame(index=air_leader_df.index)
-        # Vout = [seconds, flow rate]
-        # extract the information about measurement point 700.1
         air_leader_df, V_out["7A Netz 700.1"] = extract_flow7A(air_leader_df)
         V_out["Consumption"] = air_leader_df["Consumption"]
         p["Netzdruck"] = air_leader_df["Master.AE1 (Netzdruck)"]
-        """ get pressure differences and adjust shape of V_out"""
-        # p_diff = np.diff(p)
-        # new_column = np.zeros((V_out.shape[0], 1))
-        # new_column[1:, 0] = p_diff
-        # V_out = np.hstack((V_out, new_column))
-        # V_out = V_out[1:,]
-        # p = p[1:]
         return V_out, p
 
 
@@ -289,7 +270,7 @@ def put_on_same_time_interval(df1, df2, common_index, **kwargs):
     return df1_int_fna, df2_int_fna
 
 
-def read_flist(flist, col_list, compressors, filetype="airleader"):
+def read_flist(flist, col_list, compressors, filetype, reference_date):
     """
     read files from a flist
     """
@@ -301,15 +282,18 @@ def read_flist(flist, col_list, compressors, filetype="airleader"):
         if filetype == "airleader":
             if i < 2:
                 df = pd.read_csv(filename, sep=";", usecols=col_list)
-                df = get_seconds_column(df, "2023-11-01", filetype=filetype)
+                df = get_seconds_column(df, reference_date, filetype=filetype)
             else:
                 df = pd.read_csv(filename, sep=";", usecols=col_list, header=1)
                 df = get_seconds_column(
-                    df, "2023-11-01", filetype=filetype, datepattern="%d-%m-%Y %H:%M:%S"
+                    df,
+                    reference_date,
+                    filetype=filetype,
+                    datepattern="%d-%m-%Y %H:%M:%S",
                 )
         elif filetype == "volumenstrom":
             df = pd.read_csv(filename, sep=";", usecols=col_list, header=1)
-            df = get_seconds_column(df, "2023-11-01", filetype=filetype)
+            df = get_seconds_column(df, reference_date, filetype=filetype)
         df.replace(",", ".", regex=True, inplace=True)  # replace ',' by '.'
         df = reformat_df(df, compressors, filetype=filetype)
         li.append(df)
