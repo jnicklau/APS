@@ -7,6 +7,10 @@ from sklearn import linear_model
 from sklearn.preprocessing import PolynomialFeatures
 
 
+def clustered_linear_regression_train(X, y):
+    ev.print_line("LinearRegression for Cluster")
+
+
 def sm_linear_regression_train(X, y):
     ev.print_line("StatsModels LinearRegression")
     model = sm.OLS(y, X)

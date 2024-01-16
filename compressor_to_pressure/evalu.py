@@ -6,6 +6,7 @@ import pandas as pd
 import statsmodels.api as sm
 
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import minmax_scale
 from sklearn.model_selection import (
     cross_val_score,
     LearningCurveDisplay,
@@ -190,6 +191,86 @@ def plot_resids_vs_predictors(residuals, X, datat, pcolumns, **kwargs):
             plt.ylabel("Residuals")
             plt.title("Residuals vs. %s" % (predictor))
             plt.show()
+
+
+def plot_single_patterns(
+    residuals, datat, phase, xticks, xticklabels, predictor_name, **kwargs
+):
+    # Create joint plot
+    g = sns.jointplot(data=datat, x=phase, y=residuals, **kwargs)
+    g.ax_joint.set_xticks(xticks)
+    g.ax_joint.set_xticklabels(xticklabels)
+    plt.xlabel(predictor_name)
+    plt.ylabel("Residuals")
+    plt.title("Residuals vs. phase of %s" % (predictor_name))
+    plt.show()
+
+
+def plot_resids_vs_pattern_predictors(residuals, datat, duration, **kwargs):
+    """
+      Parameters:
+      - residuals (numpy.ndarray): Array of residuals obtained from a regression model.
+      - datat (pandas.DataFrame): DataFrame containing the predictor variables.
+      - col1 (str): Name of the first column for creating the complex vector.
+      - col2 (str): Name of the second column for creating the complex vector.
+      - xlabel (str): Name of pattern
+    - **kwargs: Additional keyword arguments to be passed to seaborn.jointplot.
+
+      Returns:
+      None
+    """
+    nplots = 0
+    if "d" in duration:
+        nplots += 1
+        predictor_name = "daily_pattern"
+        col1 = predictor_name + "_real"
+        col2 = predictor_name + "_imag"
+        phase = np.angle(datat[col1] + 1j * datat[col2])
+        xticks = np.linspace(0, 24, 9)
+        xticklabels = [str(int(element)) for element in list(xticks)]
+        phase = 12 * ((phase / np.pi)) % 24
+        plot_single_patterns(
+            residuals, datat, phase, xticks, xticklabels, predictor_name, **kwargs
+        )
+    if "w" in duration:
+        nplots += 1
+        predictor_name = "weekly_pattern"
+        col1 = predictor_name + "_real"
+        col2 = predictor_name + "_imag"
+        phase = np.angle(datat[col1] + 1j * datat[col2])
+        xticks = np.linspace(0, 7, 8)
+        xticklabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ""]
+        phase = 3.5 * ((phase / np.pi)) % 7
+        plot_single_patterns(
+            residuals, datat, phase, xticks, xticklabels, predictor_name, **kwargs
+        )
+    if "a" in duration:
+        nplots += 1
+        predictor_name = "annual_pattern"
+        col1 = predictor_name + "_real"
+        col2 = predictor_name + "_imag"
+        phase = np.angle(datat[col1] + 1j * datat[col2])
+        xticks = np.linspace(0, 365, 5)
+        xticklabels = ["Jan", "Apr", "Juli", "Sept", ""]
+        phase = 365 / 2 * ((phase / np.pi)) % 365
+        plot_single_patterns(
+            residuals, datat, phase, xticks, xticklabels, predictor_name, **kwargs
+        )
+    if all(char not in duration for char in ["a", "w", "d"]):
+        xticks = np.linspace(-np.pi, np.pi, 5)
+        xticklabels = [
+            r"$-\pi$",
+            r"$-\frac{\pi}{2}$",
+            "0",
+            r"$\frac{\pi}{2}$",
+            r"$\pi$",
+        ]
+        col1 = predictor_name + "_real"
+        col2 = predictor_name + "_imag"
+        phase = np.angle(datat[col1] + 1j * datat[col2])
+        plot_single_patterns(
+            residuals, datat, phase, xticks, xticklabels, predictor_name, **kwargs
+        )
 
 
 def plot_resids_vs_target(residuals, y, datat, targetname, **kwargs):

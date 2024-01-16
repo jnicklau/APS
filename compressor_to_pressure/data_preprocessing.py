@@ -3,6 +3,9 @@ import evalu as ev
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, calinski_harabasz_score
+import linear_models as lm
 
 
 def split_train_val_test_xy(X, y, r1=0.5, r2=0.5, ps=False, **kwargs):
@@ -79,37 +82,29 @@ def split_train_val_test_df(df, r1=0.5, r2=0.5, ps=True, **kwargs):
     val_df = pd.concat([y_val, X_val], axis=1)
     test_df = pd.concat([y_test, X_test], axis=1)
 
-    return train_df, val_df, test_df
+    return (train_df, val_df, test_df)
 
 
-def get_scaled_xy_from_splitted_df(
-    train_df,
-    val_df,
-    test_df,
-    scaler=None,
-):
+def get_scaled_xy_from_splitted_df(splitted_df, scaler=None, dg=1):
     """
     Preprocess and scale data for training, validation, and testing.
 
     Parameters:
-    - train_df (pd.DataFrame): DataFrame for training data.
-    - val_df (pd.DataFrame): DataFrame for validation data.
-    - test_df (pd.DataFrame): DataFrame for testing data.
+    - splitted_df (pd.DataFrame): Tuple of DataFrames
     - scaler: Scaler object for feature scaling (if None, no scaling is applied).
-
+    - dg (int,optional): Degree of Polynomial Extension
     Returns:
-    tuple: Tuple containing X_train, X_val, X_test, y_train, y_val, y_test, and scalers.
+    tuple: Tuples containing X_train, X_val, X_test, y_train, y_val, y_test, and scalers.
            If scaler is None, the last element is None.
     """
+    train_df, val_df, test_df = splitted_df
     X_train = train_df.iloc[:, 1:].to_numpy()
     X_val = val_df.iloc[:, 1:].to_numpy()
-    X_test = val_df.iloc[:, 1:].to_numpy()
+    X_test = test_df.iloc[:, 1:].to_numpy()
     y_train = train_df.iloc[:, 0].to_numpy().reshape(-1, 1)
     y_val = val_df.iloc[:, 0].to_numpy().reshape(-1, 1)
-    y_test = val_df.iloc[:, 0].to_numpy().reshape(-1, 1)
-    if scaler is None:
-        return X_train, X_val, X_test, y_train, y_val, y_test, None
-    else:
+    y_test = test_df.iloc[:, 0].to_numpy().reshape(-1, 1)
+    if scaler is not None:
         ev.print_line("Scaling Data")
         scaler_X = scaler
         scaler_y = scaler
@@ -119,7 +114,14 @@ def get_scaled_xy_from_splitted_df(
         y_train = scaler_y.fit_transform(y_train)
         y_val = scaler_y.transform(y_val)
         y_test = scaler_y.transform(y_test)
-        return X_train, X_val, X_test, y_train, y_val, y_test, [scaler_X, scaler_y]
+    else:
+        scaler_X = None
+        scaler_y = None
+    if dg > 1:
+        X_train = lm.extend_to_polynomial(X_train)
+        X_val = lm.extend_to_polynomial(X_val)
+        X_test = lm.extend_to_polynomial(X_test)
+    return (X_train, X_val, X_test), (y_train, y_val, y_test), (scaler_X, scaler_y)
 
 
 def add_difference_column(df1, column_name, df2, new_column_name):
@@ -171,7 +173,7 @@ def sum_and_remove_columns(input_df, columns_to_sum, new_column_name):
     return output_df
 
 
-def add_time_patterns(df, start_date="2023-01-01"):
+def add_time_patterns(df, start_date="2023-11-01"):
     """
     Add columns for daily, weekly, and annual patterns to a DataFrame.
 
@@ -188,7 +190,7 @@ def add_time_patterns(df, start_date="2023-01-01"):
     df.index = start_datetime + pd.to_timedelta(df.index, unit="s")
 
     minutes_in_day = 24 * 60
-    days_in_week = 7
+    hours_in_week = 7 * 24
     days_in_year = 365.25  # Consider leap years
 
     df["daily_pattern_real"] = np.real(
@@ -198,10 +200,10 @@ def add_time_patterns(df, start_date="2023-01-01"):
         np.exp(2j * np.pi * (df.index.hour * 60 + df.index.minute) / minutes_in_day)
     )
     df["weekly_pattern_real"] = np.real(
-        np.exp(2j * np.pi * df.index.dayofweek / days_in_week)
+        np.exp(2j * np.pi * (df.index.dayofweek * 24 + df.index.hour) / hours_in_week)
     )
     df["weekly_pattern_imag"] = np.imag(
-        np.exp(2j * np.pi * df.index.dayofweek / days_in_week)
+        np.exp(2j * np.pi * (df.index.dayofweek * 24 + df.index.hour) / hours_in_week)
     )
     df["annual_pattern_real"] = np.real(
         np.exp(2j * np.pi * df.index.dayofyear / days_in_year)
@@ -220,6 +222,18 @@ def scale_Xy(X, y, scaler):
     X = scaler.fit_transform(X)
     y = scaler.fit_transform(y.reshape(-1, 1))
     return X, y
+
+
+def kmeans_cluster_df(dataframe, num_clusters, **kwargs):
+    ev.print_line("KMeans Clustering into %s" % num_clusters)
+    # Extract numerical columns from the DataFrame
+    numerical_columns = dataframe.select_dtypes(include=["float64", "int64"]).columns
+    numerical_data = dataframe[numerical_columns]
+    # Apply K-Means clustering
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42, **kwargs)
+    dataframe["cluster"] = kmeans.fit_predict(numerical_data)
+
+    return dataframe
 
 
 if __name__ == "__main__":

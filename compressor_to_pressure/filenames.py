@@ -25,6 +25,5 @@ h1_flow_file = flow_path + "/DurchflussdatenNetzABC_01.11-20.11.23.1hour.csv"
 flow_file = flow_path + "/DurchflussdatenNetzABC_01.11-20.11.23.csv"
 # ===========================================================
 if __name__ == "__main__":
-    print(d1_air_leader_file)
-    # print(all_air_leader_files_test)
-    print("filenames.py")
+    print(all_air_leader_files)
+    print("This is filenames.py")
