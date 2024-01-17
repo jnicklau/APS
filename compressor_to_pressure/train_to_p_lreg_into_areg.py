@@ -17,20 +17,21 @@ from sklearn.preprocessing import (
 # airleader_files = fn.all_air_leader_files
 airleader_files = [fn.d1_air_leader_file]
 # airleader_files = [fn.h1_air_leader_file]
-# airleader_files = [fn.short_air_leader_file]
+airleader_files = [fn.short_air_leader_file]
 
 # airflow_files = fn.flow_file
 airflow_files = fn.d1_flow_file
 # airflow_files = fn.h1_flow_file
-# airflow_files = fn.short_flow_file
+airflow_files = fn.short_flow_file
 scaler = StandardScaler()
+reference_date = "2023-11-01"
 
 # ------------------------------------------------------------
 if __name__ == "__main__":
     # ------------------------------------------------------------
     ev.print_line("READING DATA")
-    air_leader = rd.fetch_airleader(airleader_files)
-    air_flow = rd.fetch_airflow(airflow_files)
+    air_leader = rd.fetch_airleader(airleader_files, reference_date)
+    air_flow = rd.fetch_airflow(airflow_files, reference_date)
     # ------------------------------------------------------------
     common_times = rd.get_common_times(air_leader, air_flow)
     air_leader, air_flow = rd.put_on_same_time_interval(

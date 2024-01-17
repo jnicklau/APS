@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import statsmodels.api as sm
-
+from scipy.stats import norm
+from sklearn import tree
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import minmax_scale
 from sklearn.model_selection import (
@@ -12,6 +13,16 @@ from sklearn.model_selection import (
     LearningCurveDisplay,
 )
 import reading_data as rd
+
+
+def plot_tree_from_model(model):
+    # tree = model.tree_
+    tree.plot_tree(model)
+    plt.show()
+
+
+def get_variable_name(variable, namespace):
+    return [name for name, obj in namespace.items() if obj is variable]
 
 
 def print_line(mstring=""):
@@ -42,7 +53,7 @@ def comp_and_eval_predictions(y_pred_array, y_true, **kwargs):
     return metrics_array
 
 
-def cross_validation(X, y, model, **kwargs):
+def cross_validation(X=None, y=None, df=None, model=None, **kwargs):
     """
     Perform cross-validation for a given model.
 
@@ -55,7 +66,11 @@ def cross_validation(X, y, model, **kwargs):
     Returns:
     numpy.ndarray: Array of cross-validation scores.
     """
+    # If a DataFrame is provided, extract X and y
     print_line("CROSS VALIDATION")
+    if df is not None:
+        y = df.iloc[:, 0]
+        X = df.iloc[:, 1:]
     scores = cross_val_score(model, X, y.ravel(), **kwargs)
     print(
         "%0.2f mean with a standard deviation of %0.2f" % (scores.mean(), scores.std())
@@ -86,7 +101,10 @@ def metrics(y_test, y_pred):
 
 def print_metrics_array(m):
     """m: arraylike"""
-    print("MSE: \n", m[:, :, 0])
+    print(
+        "MSE: --> first parameter downward, second parameter to the right  \n",
+        m[:, :, 0],
+    )
     print("R2: \n", m[:, :, 1])
 
 
@@ -110,9 +128,10 @@ def coeff_analysis(model, idlist, plotbool=False, reggoal="K2V0"):
             plot_model_weights(model.coef_, c_nums=idlist.columns, reggoal=reggoal)
 
 
-def plot_model_vs_real(seconds, y_test, y_pred, y_pred_baseline, **kwargs):
-    plt.plot(seconds, y_test, color="green", linewidth=2, label="y_true")
-    mse_pred, r2_pred = metrics(y_test, y_pred)
+def plot_model_vs_real(y_true, y_pred, y_pred_baseline, **kwargs):
+    seconds = np.arange(np.shape(y_true)[0])
+    plt.plot(seconds, y_true, color="green", linewidth=2, label="y_true")
+    mse_pred, r2_pred = metrics(y_true, y_pred)
     plt.plot(
         seconds,
         y_pred,
@@ -120,7 +139,7 @@ def plot_model_vs_real(seconds, y_test, y_pred, y_pred_baseline, **kwargs):
         linewidth=3,
         label="y_pred \n MSE: %.3f R2: %.3f " % (mse_pred, r2_pred),
     )
-    mse_base, r2_base = metrics(y_test, y_pred_baseline)
+    mse_base, r2_base = metrics(y_true, y_pred_baseline)
     plt.plot(
         seconds,
         y_pred_baseline,
@@ -148,11 +167,31 @@ def plot_model_vs_real(seconds, y_test, y_pred, y_pred_baseline, **kwargs):
 
 def get_labels_from_reggoal(reggoal):
     if reggoal == "K2V0":
-        return "data(/time) points", "volume flow $\dot V_0$"
+        return "data(/time) points", r"volume flow $\dot V_0$"
     elif reggoal == "Vi2p":
         return "data(/time) points", "pressure $p$"
     else:
         return "", ""
+
+
+def full_residual_analysis(residuals, data):
+    print_line("full residual analysis")
+    plot_resids(residuals)
+    plot_resids_dist(residuals)
+    qqplot(residuals, norm, "Normal")
+    plot_resids_vs_predictors(
+        residuals,
+        data,
+        kind="hist",
+        bins=100,
+    )
+    plot_resids_vs_pattern_predictors(
+        residuals,
+        data,
+        "dwa",
+        kind="hist",
+        bins=100,
+    )
 
 
 def plot_resids_dist(residuals, **kwargs):
@@ -160,6 +199,7 @@ def plot_resids_dist(residuals, **kwargs):
     sns.displot(
         residuals,
         bins=20,
+        **kwargs,
     )
     plt.xlabel("Residuals")
     plt.ylabel("Counts")
@@ -168,7 +208,7 @@ def plot_resids_dist(residuals, **kwargs):
     plt.show()
 
 
-def plot_resids_vs_predictors(residuals, X, datat, pcolumns, **kwargs):
+def plot_resids_vs_predictors(residuals, datat, pcolumns=None, **kwargs):
     """
     This function creates a series of joint plots, each displaying
     the relationship between the residuals and an individual predictor
@@ -184,6 +224,8 @@ def plot_resids_vs_predictors(residuals, X, datat, pcolumns, **kwargs):
     Returns:
     None
     """
+    if pcolumns is None:
+        pcolumns = list(np.arange(len(datat.columns)))
     for i, predictor in enumerate(datat.columns):
         if i in pcolumns:
             sns.jointplot(data=datat, x=predictor, y=residuals, **kwargs)
@@ -273,7 +315,7 @@ def plot_resids_vs_pattern_predictors(residuals, datat, duration, **kwargs):
         )
 
 
-def plot_resids_vs_target(residuals, y, datat, targetname, **kwargs):
+def plot_resids_vs_target(residuals, datat, targetname, **kwargs):
     sns.jointplot(data=datat, x=datat[targetname], y=residuals, **kwargs)
     plt.xlabel(targetname)
     plt.ylabel("Residuals")

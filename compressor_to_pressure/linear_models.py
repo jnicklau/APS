@@ -18,9 +18,26 @@ def sm_linear_regression_train(X, y):
     return results
 
 
-def linear_regression_train(X, y, **kwargs):
+def linear_regression_train(X=None, y=None, df=None, **kwargs):
+    """
+    Train a Linear Regression model.
+
+    Parameters:
+    - X (array-like or DataFrame): Features.
+    - y (array-like, optional): Target variable.
+    - df (DataFrame, optional): If provided, X and y will
+        be extracted from the DataFrame.
+    - **kwargs: Additional parameters to pass to LinearRegression.
+
+    Returns:
+    - LinearRegression: Trained Linear Regression model.
+    """
     ev.print_line("LinearRegression")
-    lregr = linear_model.LinearRegression(positive=kwargs.get("positive", False))
+    if df is not None:
+        # If a DataFrame is provided, extract X and y
+        y = df.iloc[:, 0]
+        X = df.iloc[:, 1:]
+    lregr = linear_model.LinearRegression(**kwargs)
     lregr.fit(X, y)
     return lregr
 

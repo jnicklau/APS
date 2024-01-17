@@ -3,6 +3,8 @@ import evalu as ev
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import PolynomialFeatures
+
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
 import linear_models as lm
@@ -41,6 +43,31 @@ def split_train_val_test_xy(X, y, r1=0.5, r2=0.5, ps=False, **kwargs):
         print("shape of X_val and y_val: ", np.shape(X_val), np.shape(y_val))
         print("shape of X_test and y_test: ", np.shape(X_test), np.shape(y_test), "\n")
     return X_train, X_val, X_test, y_train, y_val, y_test
+
+
+def scale_splitted_data(spltd_data, scaler):
+    """
+    Parameters:
+    - spltd_data (tuple): A tuple containing training, validation, and test data.
+    - scaler (Scaler): Scikit-learn scaler object
+    Returns:
+    - tuple: Scaled training, validation, and test data.
+    """
+    # Unpack the tuple
+    train_data, val_data, test_data = spltd_data
+    # Scale training data
+    train_scaled = scaler.fit_transform(train_data)
+    # Use the same scaler to transform validation and test data
+    val_scaled = scaler.transform(val_data)
+    test_scaled = scaler.transform(test_data)
+    # Convert scaled arrays back to DataFrames
+    columns = train_data.columns
+
+    train_scaled_df = pd.DataFrame(train_scaled, columns=columns)
+    val_scaled_df = pd.DataFrame(val_scaled, columns=columns)
+    test_scaled_df = pd.DataFrame(test_scaled, columns=columns)
+
+    return (train_scaled_df, val_scaled_df, test_scaled_df)
 
 
 def split_train_val_test_df(df, r1=0.5, r2=0.5, ps=True, **kwargs):
@@ -85,17 +112,35 @@ def split_train_val_test_df(df, r1=0.5, r2=0.5, ps=True, **kwargs):
     return (train_df, val_df, test_df)
 
 
-def get_scaled_xy_from_splitted_df(splitted_df, scaler=None, dg=1):
+def tuple_polynomial_extension(X, degree):
     """
-    Preprocess and scale data for training, validation, and testing.
+    Parameters:
+    - X (tuple): A tuple containing training, validation, and test data.
+
+    Returns:
+    - tuple: Data with polynomial features applied for training, validation, and test sets.
+    """
+    X_train, X_val, X_test = X
+    # Initialize the PolynomialFeatures transformer
+    poly = PolynomialFeatures(degree=degree)
+    # Apply polynomial extension to training, validation, and test data
+    X_train_poly = poly.fit_transform(X_train)
+    X_val_poly = poly.transform(X_val)
+    X_test_poly = poly.transform(X_test)
+
+    return (X_train_poly, X_val_poly, X_test_poly)
+
+
+def get_xy_from_splitted_df(
+    splitted_df,
+):
+    """
+    Preprocess data for training, validation, and testing.
 
     Parameters:
     - splitted_df (pd.DataFrame): Tuple of DataFrames
-    - scaler: Scaler object for feature scaling (if None, no scaling is applied).
-    - dg (int,optional): Degree of Polynomial Extension
     Returns:
-    tuple: Tuples containing X_train, X_val, X_test, y_train, y_val, y_test, and scalers.
-           If scaler is None, the last element is None.
+    tuple: Tuples containing X_train, X_val, X_test, y_train, y_val, y_test
     """
     train_df, val_df, test_df = splitted_df
     X_train = train_df.iloc[:, 1:].to_numpy()
@@ -104,24 +149,7 @@ def get_scaled_xy_from_splitted_df(splitted_df, scaler=None, dg=1):
     y_train = train_df.iloc[:, 0].to_numpy().reshape(-1, 1)
     y_val = val_df.iloc[:, 0].to_numpy().reshape(-1, 1)
     y_test = test_df.iloc[:, 0].to_numpy().reshape(-1, 1)
-    if scaler is not None:
-        ev.print_line("Scaling Data")
-        scaler_X = scaler
-        scaler_y = scaler
-        X_train = scaler_X.fit_transform(X_train)
-        X_val = scaler_X.transform(X_val)
-        X_test = scaler_X.transform(X_test)
-        y_train = scaler_y.fit_transform(y_train)
-        y_val = scaler_y.transform(y_val)
-        y_test = scaler_y.transform(y_test)
-    else:
-        scaler_X = None
-        scaler_y = None
-    if dg > 1:
-        X_train = lm.extend_to_polynomial(X_train)
-        X_val = lm.extend_to_polynomial(X_val)
-        X_test = lm.extend_to_polynomial(X_test)
-    return (X_train, X_val, X_test), (y_train, y_val, y_test), (scaler_X, scaler_y)
+    return (X_train, X_val, X_test), (y_train, y_val, y_test)
 
 
 def add_difference_column(df1, column_name, df2, new_column_name):

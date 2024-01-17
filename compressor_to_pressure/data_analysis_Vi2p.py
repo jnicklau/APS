@@ -1,18 +1,20 @@
 # data_analysis_Vi2p.py
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import filenames as fn
 import reading_data as rd
 import evalu as ev
 import data_analyis as da
+import data_preprocessing as dpp
+
 from sklearn.preprocessing import (
     MinMaxScaler,
     StandardScaler,
     MaxAbsScaler,
 )
-import seaborn as sns
-import matplotlib.pyplot as plt
-import data_preprocessing as dpp
 
 airleader_files = fn.all_air_leader_files
 # airleader_files = [fn.d1_air_leader_file]

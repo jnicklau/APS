@@ -33,25 +33,26 @@ def manual_hyp_param_search(
     - y_pred_array (numpy.ndarray): Array of predicted values.
     - resid_array (numpy.ndarray): Array of residuals.
     - models (list of lists):
+
     """
     # Default values
-    n1 = kwargs.get("n1", 1)
-    s1 = kwargs.get("s1", 1)
-    e1 = kwargs.get("e1", 1)
-    t1 = kwargs.get("t1", "linear")
-    n2 = kwargs.get("n2", 1)
-    s2 = kwargs.get("s2", 1)
-    e2 = kwargs.get("e2", 1)
-    t2 = kwargs.get("t2", "linear")
+    n1 = kwargs.pop("n1", 1)
+    s1 = kwargs.pop("s1", 1)
+    e1 = kwargs.pop("e1", 1)
+    t1 = kwargs.pop("t1", "linear")
+    n2 = kwargs.pop("n2", 1)
+    s2 = kwargs.pop("s2", 1)
+    e2 = kwargs.pop("e2", 1)
+    t2 = kwargs.pop("t2", "linear")
 
     if t1 == "linear":
-        params1 = np.linspace(s1, e1, n1)
+        params1 = np.linspace(s1, e1, n1, dtype=int)
     else:
-        params1 = np.logspace(s1, e1, n1)
+        params1 = np.logspace(s1, e1, n1, dtype=int)
     if t2 == "linear":
-        params2 = np.linspace(s2, e2, n2)
+        params2 = np.linspace(s2, e2, n2, dtype=int)
     else:
-        params2 = np.logspace(s2, e2, n2)
+        params2 = np.logspace(s2, e2, n2, dtype=int)
 
     if n1 * n2 > 1:
         ev.print_line("Manual HPS")
@@ -63,7 +64,10 @@ def manual_hyp_param_search(
             if pname1 is not None:
                 if pname2 is not None:
                     lr_model = foo(
-                        X_train, y_train, **{pname1: params1[i], pname2: params2[j]}
+                        X_train,
+                        y_train,
+                        **{pname1: params1[i], pname2: params2[j]},
+                        **kwargs,
                     )
             else:
                 lr_model = lm.sm_linear_regression_train(
@@ -72,10 +76,57 @@ def manual_hyp_param_search(
                 )
             models[i][j] = lr_model
             y_pred = lr_model.predict(X_val)
-            residuals = -lr_model.predict(X_train) + y_train.ravel()
+            residuals = -lr_model.predict(X_val) + y_val.ravel()
             y_pred_array[i, j, :] = y_pred.reshape(1, -1)
             resid_array[i, j, :] = residuals
     return y_pred_array, resid_array, models
+
+
+def run_and_eval_manual_hyp_param_search(
+    foo, X_train, y_train, X_val, y_val, ra=False, **kwargs
+):
+    """
+    Example:
+    foo = lm.sm_linear_regression_train
+    mi.run_and_eval_manual_hyp_param_search(
+        foo, X_train, y_train, X_val, y_val, ra=False, n1=n_cv1, n2=n_cv2
+    )
+    """
+    ev.print_line("Train Hyper Parametric Models")
+    # foo = lm.sm_linear_regression_train
+    y_pred_array, resid_array, models = manual_hyp_param_search(
+        foo, X_train, y_train, X_val, y_val, **kwargs
+    )
+    ev.print_line("Analyze Hyper Parametric Models")
+    y_pred_baseline = np.full(np.shape(y_val), np.mean(y_train))
+
+    ev.print_line("Results Analysis")
+    metrics_array = ev.comp_and_eval_predictions(y_pred_array, y_val)
+    ev.print_metrics_array(metrics_array)
+    if ra == True:
+        ev.print_line("Residual Analysis")
+        for i in range(n_cv1):
+            for j in range(n_cv2):
+                print(i, j)
+                residuals = resid_array[i, j, :]
+                ev.plot_resids(residuals)
+                ev.plot_resids_dist(residuals)
+                ev.plot_resids_vs_predictors(
+                    residuals,
+                    X_val,
+                    val_data,
+                    pcolumns=[0, 1, 2],
+                    kind="hex",
+                    gridsize=50,
+                )
+                ev.plot_resids_vs_pattern_predictors(
+                    residuals,
+                    val_data,
+                    duration="dw",
+                    kind="hex",
+                    gridsize=100,
+                )
+                ev.qqplot(residuals, stats.norm, "norm")
 
 
 if __name__ == "__main__":
