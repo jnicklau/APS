@@ -1,3 +1,15 @@
+# specific folders #
+models/
+results/
+images/
+
+# pycache files and folders #
+__pycache__/
+*.pyc
+
+# powerpoint files
+*.pptx
+
 # Compiled source #
 ###################
 *.com
